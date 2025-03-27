@@ -69,6 +69,7 @@ export interface Build {
   subclass: "Solar" | "Arc" | "Void" | "Strand" | "Stasis"
   description: string
   howItWorks: string[]
+  howItWorks2?: string[]
   imageUrl: string
   tags: string[]
   exotics: string[]

@@ -13,7 +13,6 @@ class DestinyAPI {
         if (!this.apiKey) {
             throw new Error('Destiny API key is not configured');
         }
-        // Initialize manifest data when the class is instantiated
         this.initializeManifest().catch(console.error);
     }
 
@@ -48,7 +47,6 @@ class DestinyAPI {
         const items = Object.values(manifestTables.DestinyInventoryItemDefinition);
         const sandboxPerks = Object.values(manifestTables.DestinySandboxPerkDefinition);
 
-        // Create a map of item hashes to items for quick lookup
         const itemMap = new Map(items.map(item => [item.hash, item]));
 
         //TierType 6 is exotic
@@ -58,13 +56,15 @@ class DestinyAPI {
         const exoticArmor = items.filter(item => 
             item.inventory?.tierType === 6 &&
             item.itemType === 2 &&
-            !item.itemTypeDisplayName?.toLowerCase().includes("deprecated")
+            !item.itemTypeDisplayName?.toLowerCase().includes("deprecated") &&
+            item.screenshot
         );
 
         const exoticWeapons = items.filter(item => 
             item.inventory?.tierType === 6 &&
             item.itemType === 3 &&
-            !item.itemTypeDisplayName?.toLowerCase().includes("deprecated")
+            !item.itemTypeDisplayName?.toLowerCase().includes("deprecated") &&
+            item.screenshot
         );
 
         const mods = items.filter(item => 
@@ -82,7 +82,6 @@ class DestinyAPI {
             !item.itemTypeDisplayName?.toLowerCase().includes("deprecated")
         );
 
-        // Add descriptions from sandbox perks
         const addDescriptionFromSandbox = (item: DestinyInventoryItemDefinition) => {
             const matchingPerk = sandboxPerks.find(perk => 
                 perk.displayProperties.name === item.displayProperties.name
@@ -99,11 +98,10 @@ class DestinyAPI {
             return item;
         };
 
-        // Add exotic perk descriptions from socket entries
         const addExoticPerkDescription = (item: DestinyInventoryItemDefinition) => {
             if (!item.sockets?.socketEntries) return item;
 
-            const socketIndex = item.itemType === 2 ? 11 : 0; // 1 for armor, 0 for weapons
+            const socketIndex = item.itemType === 2 ? 11 : 0; // 11 for armor, 0 for weapons
             const perkHash = item.sockets.socketEntries[socketIndex]?.singleInitialItemHash;
             
             if (perkHash) {
@@ -139,12 +137,10 @@ class DestinyAPI {
     }
 
     private async initializeManifest(): Promise<GlobalData> {
-        // Check if we have cached data and if it's still valid
         if (this.manifestData && this.lastFetchTime && Date.now() - this.lastFetchTime < this.CACHE_DURATION) {
             return this.manifestData;
         }
 
-        // If no cache or expired, fetch new data
         const manifestTables = await this.fetchManifestTables();
         this.manifestData = await this.getManifestItems(manifestTables);
         this.lastFetchTime = Date.now();
@@ -176,7 +172,21 @@ class DestinyAPI {
         if (!this.manifestData) {
             await this.initializeManifest();
         }
-        return this.manifestData!.mods.find(mod => mod.displayProperties.name === modName);
+        const mod = this.manifestData!.mods.find(mod => mod.displayProperties.name === modName);
+        if (!mod) return null;
+
+        let armorType = "";
+        const displayName = mod.itemTypeDisplayName || "";
+        if (displayName.includes("Helmet")) armorType = "helmet";
+        else if (displayName.includes("Arms")) armorType = "arms";
+        else if (displayName.includes("Chest")) armorType = "chest";
+        else if (displayName.includes("Leg")) armorType = "legs";
+        else if (displayName.includes("Class Item")) armorType = "class";
+
+        return {
+            ...mod,
+            armorType
+        };
     }
 
     public async getAllExoticArmor() {

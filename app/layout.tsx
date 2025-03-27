@@ -2,13 +2,52 @@ import type React from "react"
 import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
+import { Metadata } from "next"
 
 const inter = Inter({ subsets: ["latin"] })
 
-export const metadata = {
-  title: "Destiny Builds",
-  description: "Discover and share optimized builds for Destiny 2",
-    generator: 'v0.dev'
+export const metadata: Metadata = {
+  title: {
+    default: "Destiny 2 Builds - Find and Share Optimized Builds",
+    template: "%s | Destiny 2 Builds"
+  },
+  description: "Discover and share optimized builds for Destiny 2. Find the best builds for PvE and PvP activities.",
+  keywords: "Destiny 2, builds, build guide, PvE, PvP, Hunter, Titan, Warlock, Solar, Arc, Void, Strand, Stasis, Prismatic",
+  authors: [{ name: "Destiny 2 Builds" }],
+  creator: "Destiny 2 Builds",
+  publisher: "Destiny 2 Builds",
+  robots: "index, follow",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    url: "https://preview.nekomimi.pet",
+    siteName: "Destiny 2 Builds",
+    title: "Destiny 2 Builds - Find and Share Optimized Builds",
+    description: "Discover and share optimized builds for Destiny 2. Find the best builds for PvE and PvP activities.",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "Destiny 2 Builds",
+      },
+    ],
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "Destiny 2 Builds - Find and Share Optimized Builds",
+    description: "Discover and share optimized builds for Destiny 2. Find the best builds for PvE and PvP activities.",
+    images: ["/og-image.jpg"],
+    creator: "@destiny2builds",
+  },
+  viewport: {
+    width: "device-width",
+    initialScale: 1,
+    maximumScale: 1,
+  },
+  verification: {
+    google: "your-google-site-verification",
+  },
 }
 
 export default function RootLayout({
@@ -19,7 +58,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider attribute="class" defaultTheme="dark" enableSystem disableTransitionOnChange>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
           <div className="min-h-screen bg-background text-foreground">
             <header className="border-b">
               <div className="container mx-auto px-4 py-4 flex items-center justify-between">
@@ -66,7 +105,5 @@ export default function RootLayout({
     </html>
   )
 }
-
-
 
 import './globals.css'

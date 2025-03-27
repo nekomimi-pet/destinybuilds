@@ -6,6 +6,45 @@ import { ArrowLeft } from "lucide-react"
 import InventoryScreen from "@/components/inventory-screen"
 import { dummyBuilds } from "@/data/dummy-data"
 import { destinyApi } from "@/lib/destinyApi"
+import { Metadata } from "next"
+
+export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
+  const build = dummyBuilds.find((b) => b.id === params.id) || dummyBuilds[0]
+  
+  // Get the exotic data to access the screenshot
+  const exoticData = await destinyApi.getExoticArmor(build.exotics[0]) || await destinyApi.getExoticWeapon(build.exotics[0]);
+  const imageUrl = exoticData?.screenshot 
+    ? `https://www.bungie.net${exoticData.screenshot}`
+    : build.imageUrl;
+  
+  return {
+    title: `${build.name} Build - Destiny 2 ${build.subclass} ${build.class} Build Guide`,
+    description: build.description,
+    openGraph: {
+      title: `${build.name} Build - Destiny 2 ${build.subclass} ${build.class} Build Guide`,
+      description: build.description,
+      images: [imageUrl],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: `${build.name} Build - Destiny 2 ${build.subclass} ${build.class} Build Guide`,
+      description: build.description,
+      images: [imageUrl],
+    },
+    keywords: [
+      'Destiny 2',
+      'build guide',
+      build.class,
+      build.subclass,
+      build.name,
+      ...build.tags,
+      ...build.exotics,
+      ...build.keyMods,
+      ...build.aspects,
+      ...build.fragments
+    ].join(', '),
+  }
+}
 
 export default async function BuildPage({ params }: { params: { id: string } }) {
   const build = dummyBuilds.find((b) => b.id === params.id) || dummyBuilds[0]
@@ -25,9 +64,18 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
     return {
       name: modName,
       imageUrl: modData ? `https://www.bungie.net${modData.displayProperties.icon}` : "/placeholder.svg",
-      description: modData?.displayProperties.description || ""
+      description: modData?.displayProperties.description || "",
+      armorType: modData?.armorType
     };
   }));
+
+  // Sort mods by armor type
+  const sortedModsData = [...modsData].sort((a, b) => {
+    const order = { helmet: 0, arms: 1, chest: 2, legs: 3, class: 4 };
+    const typeA = a.armorType || '';
+    const typeB = b.armorType || '';
+    return (order[typeA as keyof typeof order] ?? 999) - (order[typeB as keyof typeof order] ?? 999);
+  });
 
   return (
     <main className="container mx-auto px-4 py-8">
@@ -62,6 +110,17 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
           </div>
 
           <InventoryScreen build={build} />
+
+          {build.howItWorks2 && (
+            <div className="prose dark:prose-invert max-w-none mt-8">
+              <h2>Additional Build Details</h2>
+              <div className="space-y-4">
+                {build.howItWorks2.map((paragraph, index) => (
+                  <p key={index}>{paragraph}</p>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
         <div>
@@ -88,7 +147,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
 
             <h2 className="text-xl font-bold mt-8 mb-4">Key Mods</h2>
             <div className="space-y-4">
-              {modsData.map((mod) => (
+              {sortedModsData.map((mod) => (
                 <div key={mod.name} className="flex items-start space-x-3">
                   <div className="relative w-12 h-12 bg-black/20 rounded flex-shrink-0">
                     <Image
@@ -99,7 +158,12 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
                     />
                   </div>
                   <div>
-                    <h3 className="font-medium">{mod.name}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-medium">{mod.name}</h3>
+                      {mod.armorType && (
+                        <span className="text-sm text-muted-foreground capitalize">({mod.armorType})</span>
+                      )}
+                    </div>
                     <p className="text-sm text-muted-foreground">{mod.description}</p>
                   </div>
                 </div>
