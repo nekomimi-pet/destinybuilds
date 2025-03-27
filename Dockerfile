@@ -4,6 +4,10 @@ FROM oven/bun:1.2.6
 # Set working directory
 WORKDIR /app
 
+# Accept build argument
+ARG DESTINY_API_KEY
+ENV DESTINY_API_KEY=$DESTINY_API_KEY
+
 # Copy package files
 COPY package*.json bun.lock ./
 
