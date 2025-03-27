@@ -2,7 +2,7 @@ import type { Build } from "@/types/destiny"
 
 export const dummyBuilds: Build[] = [
   {
-    id: "build1",
+    id: "nighthawk",
     name: "Celestial Nighthawk",
     class: "Hunter",
     subclass: "Solar",
