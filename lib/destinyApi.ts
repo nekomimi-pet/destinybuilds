@@ -7,9 +7,12 @@ class DestinyAPI {
     private manifestData: GlobalData | null = null;
     private lastFetchTime: number | null = null;
     private readonly CACHE_DURATION = 24 * 3600 * 1000; // 24 hours
-    private readonly apiKey = "93aab4d432f9427d96145cd62b8ed917"; //hardcoding because im a vibe coder
+    private readonly apiKey = process.env.DESTINY_API_KEY || '';
 
     private constructor() {
+        if (!this.apiKey) {
+            throw new Error('Destiny API key is not configured');
+        }
         // Initialize manifest data when the class is instantiated
         this.initializeManifest().catch(console.error);
     }

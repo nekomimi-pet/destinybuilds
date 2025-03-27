@@ -16,6 +16,9 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  env: {
+    DESTINY_API_KEY: process.env.DESTINY_API_KEY,
+  },
   experimental: {
     webpackBuildWorker: true,
     parallelServerBuildTraces: true,
