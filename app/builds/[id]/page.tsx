@@ -9,7 +9,8 @@ import { destinyApi } from "@/lib/destinyApi"
 import { Metadata } from "next"
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
-  const build = dummyBuilds.find((b) => b.id === params.id) || dummyBuilds[0]
+  const resolvedParams = await params;
+  const build = await dummyBuilds.find((b) => b.id === resolvedParams.id) || dummyBuilds[0]
   
   // Get the exotic data to access the screenshot
   const exoticData = await destinyApi.getExoticArmor(build.exotics[0]) || await destinyApi.getExoticWeapon(build.exotics[0]);
@@ -47,7 +48,8 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 }
 
 export default async function BuildPage({ params }: { params: { id: string } }) {
-  const build = dummyBuilds.find((b) => b.id === params.id) || dummyBuilds[0]
+  const resolvedParams = await params;
+  const build = await dummyBuilds.find((b) => b.id === resolvedParams.id) || dummyBuilds[0]
 
   // Fetch exotic and mod data
   const exoticsData = await Promise.all(build.exotics.map(async (exoticName) => {

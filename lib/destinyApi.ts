@@ -1,6 +1,6 @@
 import { getDestinyManifest, getDestinyManifestSlice } from "bungie-api-ts/destiny2"
-import { type GlobalData } from "../types/destiny"
-import { type DestinyManifestSlice, type HttpClientConfig, type DestinyInventoryItemDefinition } from "bungie-api-ts/destiny2"
+import type { GlobalData } from "../types/destiny"
+import type { DestinyManifestSlice, DestinyInventoryItemDefinition, HttpClientConfig } from "bungie-api-ts/destiny2"
 
 class DestinyAPI {
     private static instance: DestinyAPI;
@@ -8,6 +8,16 @@ class DestinyAPI {
     private lastFetchTime: number | null = null;
     private readonly CACHE_DURATION = 24 * 3600 * 1000; // 24 hours
     private readonly apiKey = process.env.DESTINY_API_KEY || '';
+
+    private static readonly ITEM_TYPES = {
+        ARMOR: 2,
+        WEAPON: 3,
+        MODS: 19,
+    }
+
+    private static readonly TIER_TYPES = {
+        EXOTIC: 6,
+    }
 
     private constructor() {
         if (!this.apiKey) {
@@ -40,50 +50,51 @@ class DestinyAPI {
             language: 'en',
         });
 
+        console.log("Manifest tables fetched");
+
         return manifestTables;
     }
 
     private async getManifestItems(manifestTables: DestinyManifestSlice<"DestinyInventoryItemDefinition"[] | "DestinySandboxPerkDefinition"[]>): Promise<GlobalData> {
+        console.log("Processing manifest items");
+        let startTime = Date.now();
+
         const items = Object.values(manifestTables.DestinyInventoryItemDefinition);
         const sandboxPerks = Object.values(manifestTables.DestinySandboxPerkDefinition);
 
         const itemMap = new Map(items.map(item => [item.hash, item]));
 
-        //TierType 6 is exotic
-        //ItemType 2 is armor
-        //ItemType 3 is weapons
-        //ItemType 19 is mods
-        const exoticArmor = items.filter(item => 
-            item.inventory?.tierType === 6 &&
-            item.itemType === 2 &&
+        const exoticArmor = items.filter(item =>
+            item.inventory?.tierType === DestinyAPI.TIER_TYPES.EXOTIC &&
+            item.itemType === DestinyAPI.ITEM_TYPES.ARMOR &&
             !item.itemTypeDisplayName?.toLowerCase().includes("deprecated") &&
             item.screenshot
         );
 
-        const exoticWeapons = items.filter(item => 
-            item.inventory?.tierType === 6 &&
-            item.itemType === 3 &&
+        const exoticWeapons = items.filter(item =>
+            item.inventory?.tierType === DestinyAPI.TIER_TYPES.EXOTIC &&
+            item.itemType === DestinyAPI.ITEM_TYPES.WEAPON &&
             !item.itemTypeDisplayName?.toLowerCase().includes("deprecated") &&
             item.screenshot
         );
 
-        const mods = items.filter(item => 
-            item.itemType === 19 &&
+        const mods = items.filter(item =>
+            item.itemType === DestinyAPI.ITEM_TYPES.MODS &&
             !item.itemTypeDisplayName?.toLowerCase().includes("deprecated")
         );
 
-        const aspects = items.filter(item => 
+        const aspects = items.filter(item =>
             item.itemTypeDisplayName?.includes("Aspect") &&
             !item.itemTypeDisplayName?.toLowerCase().includes("deprecated")
         );
 
-        const fragments = items.filter(item => 
+        const fragments = items.filter(item =>
             item.itemTypeDisplayName?.includes("Fragment") &&
             !item.itemTypeDisplayName?.toLowerCase().includes("deprecated")
         );
 
         const addDescriptionFromSandbox = (item: DestinyInventoryItemDefinition) => {
-            const matchingPerk = sandboxPerks.find(perk => 
+            const matchingPerk = sandboxPerks.find(perk =>
                 perk.displayProperties.name === item.displayProperties.name
             );
             if (matchingPerk) {
@@ -103,7 +114,7 @@ class DestinyAPI {
 
             const socketIndex = item.itemType === 2 ? 11 : 0; // 11 for armor, 0 for weapons
             const perkHash = item.sockets.socketEntries[socketIndex]?.singleInitialItemHash;
-            
+
             if (perkHash) {
                 const perkItem = itemMap.get(perkHash);
                 if (perkItem?.displayProperties.description) {
@@ -119,13 +130,16 @@ class DestinyAPI {
             return item;
         };
 
-        // Apply descriptions to all relevant items
         const modsWithDesc = mods.map(addDescriptionFromSandbox);
         const aspectsWithDesc = aspects.map(addDescriptionFromSandbox);
         const fragmentsWithDesc = fragments.map(addDescriptionFromSandbox);
         const exoticArmorWithDesc = exoticArmor.map(addExoticPerkDescription);
         const exoticWeaponsWithDesc = exoticWeapons.map(addExoticPerkDescription);
-        
+
+        const endTime = Date.now();
+        const duration = endTime - startTime;
+        console.log(`Processing manifest items took ${duration}ms`);
+
         return {
             exoticArmor: exoticArmorWithDesc,
             exoticWeapons: exoticWeaponsWithDesc,
@@ -210,20 +224,6 @@ class DestinyAPI {
         return this.manifestData!.mods;
     }
 
-    public async getAspect(aspectName: string) {
-        if (!this.manifestData) {
-            await this.initializeManifest();
-        }
-        return this.manifestData!.aspects.find(aspect => aspect.displayProperties.name === aspectName);
-    }
-
-    public async getFragment(fragmentName: string) {
-        if (!this.manifestData) {
-            await this.initializeManifest();
-        }
-        return this.manifestData!.fragments.find(fragment => fragment.displayProperties.name === fragmentName);
-    }
-
     public async getAllAspects() {
         if (!this.manifestData) {
             await this.initializeManifest();
@@ -238,11 +238,25 @@ class DestinyAPI {
         return this.manifestData!.fragments;
     }
 
+    public async getAspect(aspectName: string) {
+        if (!this.manifestData) {
+            await this.initializeManifest();
+        }
+        return this.manifestData!.aspects.find(aspect => aspect.displayProperties.name === aspectName);
+    }
+
+    public async getFragment(fragmentName: string) {
+        if (!this.manifestData) {
+            await this.initializeManifest();
+        }
+        return this.manifestData!.fragments.find(fragment => fragment.displayProperties.name === fragmentName);
+    }
+
     public async getAspectsBySubclass(subclass: "Solar" | "Arc" | "Void" | "Strand" | "Stasis") {
         if (!this.manifestData) {
             await this.initializeManifest();
         }
-        return this.manifestData!.aspects.filter(aspect => 
+        return this.manifestData!.aspects.filter(aspect =>
             aspect.itemTypeDisplayName?.includes(`${subclass} Aspect`)
         );
     }
@@ -251,7 +265,7 @@ class DestinyAPI {
         if (!this.manifestData) {
             await this.initializeManifest();
         }
-        return this.manifestData!.fragments.filter(fragment => 
+        return this.manifestData!.fragments.filter(fragment =>
             fragment.itemTypeDisplayName?.includes(`${subclass} Fragment`)
         );
     }
@@ -267,4 +281,10 @@ class DestinyAPI {
     }
 }
 
-export const destinyApi = DestinyAPI.getInstance();
+//Globalize the instance to stop nextjs dev server from losing it on hot reloads
+declare global {
+    var destinyApi: DestinyAPI | undefined;
+}
+
+export const destinyApi =
+    global.destinyApi || (global.destinyApi = DestinyAPI.getInstance());

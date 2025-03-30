@@ -2,7 +2,7 @@ import type React from "react"
 import "@/app/globals.css"
 import { Inter } from "next/font/google"
 import { ThemeProvider } from "@/components/theme-provider"
-import { Metadata } from "next"
+import { Metadata, Viewport } from "next"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -40,14 +40,15 @@ export const metadata: Metadata = {
     images: ["/og-image.jpg"],
     creator: "@destiny2builds",
   },
-  viewport: {
-    width: "device-width",
-    initialScale: 1,
-    maximumScale: 1,
-  },
   verification: {
     google: "your-google-site-verification",
   },
+}
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
 }
 
 export default function RootLayout({
