@@ -31,10 +31,10 @@ export const dummyBuilds: Build[] = [
     "name": "Cenotaph Mask",
     "class": "Warlock",
     "subclass": "Solar",
-    "description": "Showcase build for a generic support Cenotaph build.",
+    "description": "Showcase build for a generic support Cenotaph Mask build.",
     "howItWorks": [
-      "Cenotaph is an exotic helmet that marks enemies with a debuff on damage that if an ally kills, generates special ammo for you and heavy ammo for your teammates. Highly useful in scenarios where ammo is scarce and useful such as Grandmasters as well as Contest/Master raids.",
-      "Cenotaph does not mandate any specific subclass choices, but can be used in a variety of ways. Popular weapon choices are Divinity and Navigator. Divinity provides a strong debuff and makes crits easier to land. Navigator provides Woven Mail for teammates as well as a grapple point for faster reloads for Strand teammates.",
+      "Cenotaph Mask is an exotic helmet that marks enemies with a debuff on damage that if an ally kills, generates special ammo for you and heavy ammo for your teammates. Highly useful in scenarios where ammo is scarce and useful such as Grandmasters as well as Contest/Master raids.",
+      "Cenotaph Mask does not mandate any specific subclass choices, but can be used in a variety of ways. Popular weapon choices are Divinity and The Navigator. Divinity provides a strong debuff and makes crits easier to land. The Navigator provides Woven Mail for teammates as well as a grapple point for faster reloads for Strand teammates.",
       "Well of Radiance is great for general support, but Strand or Void Warlocks have great neutral gameplay to help out with lackluster trace rifle damage."
     ],
     "howItWorks2": [],
@@ -46,6 +46,25 @@ export const dummyBuilds: Build[] = [
     "mode": "PvE",
     "aspects": ["Touch of Flame", "Icarus Dash"],
     "fragments": ["Ember of Solace", "Ember of Torches", "Ember of Benevolence", "Ember of Empyrean"]
+  },
+  {
+    "id": "sunbracer",
+    "name": "Sunbracers",
+    "class": "Warlock",
+    "subclass": "Solar",
+    "description": "Showcase build for a generic Sunbracers build. A great way to play Warlock in PvE.",
+    "howItWorks": [
+      "A charged melee kill is needed to proc the Sunbracers effect where you are able to throw at most 5 Solar Grenades. A very key thing is that if you are in the air, because of Heat Rises, you will gain a third of your melee energy on every kill, so be sure to activate Heat Rises before you go into the air by consuming a grenade.",
+    ],
+    "howItWorks2": [],
+    "imageUrl": "/placeholder.svg?height=300&width=600",
+    "tags": ["Sunbracers", "Warlock"],
+    "exotics": ["Sunbracers"],
+    "keyMods": ["Ashes to Assets", "Firepower", "Bolstering Detonation", "Momentum Transfer"],
+    "targetStats": ["resilience", "recovery", "intellect"],
+    "mode": "PvE",
+    "aspects": ["Touch of Flame", "Heat Rises"],
+    "fragments": ["Ember of Resolve", "Ember of Searing", "Ember of Benevolence", "Ember of Empyrean"]
   },
   {
     "id": "geomag",

@@ -7,6 +7,7 @@ import InventoryScreen from "@/components/inventory-screen"
 import { dummyBuilds } from "@/data/dummy-data"
 import { destinyApi } from "@/lib/destinyApi"
 import { Metadata } from "next"
+import { parseTextWithGameItems } from "@/lib/parseGameItems"
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   const resolvedParams = await params;
@@ -79,6 +80,24 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
     return (order[typeA as keyof typeof order] ?? 999) - (order[typeB as keyof typeof order] ?? 999);
   });
 
+  // Collection of items we've already fetched
+  const existingItems = {
+    exotics: exoticsData,
+    mods: modsData
+  };
+
+  // Parse the howItWorks paragraphs - the first call resets tracking
+  const parsedHowItWorks = await Promise.all(
+    build.howItWorks.map((paragraph, index) => 
+      parseTextWithGameItems(paragraph, existingItems, index === 0)
+    )
+  );
+  
+  // Parse howItWorks2 paragraphs - don't reset tracking since we continue from howItWorks
+  const parsedHowItWorks2 = build.howItWorks2 ? await Promise.all(
+    build.howItWorks2.map(paragraph => parseTextWithGameItems(paragraph, existingItems, false))
+  ) : [];
+
   return (
     <main className="container mx-auto px-4 py-8">
       <Link href="/" className="flex items-center text-primary mb-6 hover:underline">
@@ -105,20 +124,20 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
             <p className="text-lg">{build.description}</p>
             <h2>How This Build Works</h2>
             <div className="space-y-4">
-              {build.howItWorks.map((paragraph, index) => (
-                <p key={index}>{paragraph}</p>
+              {parsedHowItWorks.map((segments, index) => (
+                <p key={index}>{segments}</p>
               ))}
             </div>
           </div>
 
           <InventoryScreen build={build} />
 
-          {build.howItWorks2 && (
+          {build.howItWorks2 && build.howItWorks2.length > 0 && (
             <div className="prose dark:prose-invert max-w-none mt-8">
               <h2>Additional Build Details</h2>
               <div className="space-y-4">
-                {build.howItWorks2.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
+                {parsedHowItWorks2.map((segments, index) => (
+                  <p key={index}>{segments}</p>
                 ))}
               </div>
             </div>
