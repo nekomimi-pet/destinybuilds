@@ -126,9 +126,41 @@ class DestinyAPI {
         const addExoticPerkDescription = (item: DestinyInventoryItemDefinition) => {
             if (!item.sockets?.socketEntries) return item;
 
-            const socketIndex = item.itemType === 2 ? 11 : 0; // 11 for armor, 0 for weapons
-            const perkHash = item.sockets.socketEntries[socketIndex]?.singleInitialItemHash;
-
+            // For armor items, try socket 11 first, then socket 1 if no description
+            if (item.itemType === 2) { // Armor
+                const socket11Hash = item.sockets.socketEntries[11]?.singleInitialItemHash;
+                if (socket11Hash) {
+                    const perk11Item = itemMap.get(socket11Hash);
+                    if (perk11Item?.displayProperties.description) {
+                        return {
+                            ...item,
+                            displayProperties: {
+                                ...item.displayProperties,
+                                description: perk11Item.displayProperties.description
+                            }
+                        };
+                    }
+                }
+                
+                // If socket 11 doesn't have a description, try socket 1
+                const socket1Hash = item.sockets.socketEntries[1]?.singleInitialItemHash;
+                if (socket1Hash) {
+                    const perk1Item = itemMap.get(socket1Hash);
+                    if (perk1Item?.displayProperties.description) {
+                        return {
+                            ...item,
+                            displayProperties: {
+                                ...item.displayProperties,
+                                description: perk1Item.displayProperties.description
+                            }
+                        };
+                    }
+                }
+                return item;
+            } 
+            
+            // For weapons, use socket 0 (unchanged)
+            const perkHash = item.sockets.socketEntries[0]?.singleInitialItemHash;
             if (perkHash) {
                 const perkItem = itemMap.get(perkHash);
                 if (perkItem?.displayProperties.description) {
