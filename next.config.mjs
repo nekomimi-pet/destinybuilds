@@ -24,6 +24,7 @@ const nextConfig = {
     parallelServerBuildTraces: true,
     parallelServerCompiles: true,
   },
+  staticPageGenerationTimeout: 180,
   webpack(config) {
     config.experiments = { ...config.experiments, topLevelAwait: true };
     return config;

@@ -2,12 +2,17 @@ import { getDestinyManifest, getDestinyManifestSlice } from "bungie-api-ts/desti
 import type { GlobalData } from "../types/destiny"
 import type { DestinyManifestSlice, DestinyInventoryItemDefinition, HttpClientConfig } from "bungie-api-ts/destiny2"
 
+// Add static cache to preserve data between calls during build
+let staticManifestCache: GlobalData | null = null;
+let staticLastFetchTime: number | null = null;
+
 class DestinyAPI {
     private static instance: DestinyAPI;
     private manifestData: GlobalData | null = null;
     private lastFetchTime: number | null = null;
     private readonly CACHE_DURATION = 24 * 3600 * 1000; // 24 hours
     private readonly apiKey = process.env.DESTINY_API_KEY || '';
+    private isLoading = false;
 
     private static readonly ITEM_TYPES = {
         ARMOR: 2,
@@ -23,7 +28,16 @@ class DestinyAPI {
         if (!this.apiKey) {
             throw new Error('Destiny API key is not configured');
         }
-        this.initializeManifest().catch(console.error);
+        
+        // Use static cache if available
+        if (staticManifestCache && staticLastFetchTime && 
+            Date.now() - staticLastFetchTime < this.CACHE_DURATION) {
+            this.manifestData = staticManifestCache;
+            this.lastFetchTime = staticLastFetchTime;
+            console.log("Using cached manifest data");
+        } else {
+            this.initializeManifest().catch(console.error);
+        }
     }
 
     public static getInstance(): DestinyAPI {
@@ -151,14 +165,43 @@ class DestinyAPI {
     }
 
     private async initializeManifest(): Promise<GlobalData> {
-        if (this.manifestData && this.lastFetchTime && Date.now() - this.lastFetchTime < this.CACHE_DURATION) {
+        // Skip if already loading in another call
+        if (this.isLoading) {
+            // Wait for loading to complete
+            while (this.isLoading) {
+                await new Promise(resolve => setTimeout(resolve, 100));
+            }
+            return this.manifestData!;
+        }
+        
+        // Use static cache if available
+        if (staticManifestCache && staticLastFetchTime && 
+            Date.now() - staticLastFetchTime < this.CACHE_DURATION) {
+            this.manifestData = staticManifestCache;
+            this.lastFetchTime = staticLastFetchTime;
+            return this.manifestData;
+        }
+        
+        // If instance cache is valid, use it
+        if (this.manifestData && this.lastFetchTime && 
+            Date.now() - this.lastFetchTime < this.CACHE_DURATION) {
             return this.manifestData;
         }
 
-        const manifestTables = await this.fetchManifestTables();
-        this.manifestData = await this.getManifestItems(manifestTables);
-        this.lastFetchTime = Date.now();
-        return this.manifestData;
+        try {
+            this.isLoading = true;
+            const manifestTables = await this.fetchManifestTables();
+            this.manifestData = await this.getManifestItems(manifestTables);
+            this.lastFetchTime = Date.now();
+            
+            // Update static cache
+            staticManifestCache = this.manifestData;
+            staticLastFetchTime = this.lastFetchTime;
+            
+            return this.manifestData;
+        } finally {
+            this.isLoading = false;
+        }
     }
 
     public async getManifestData(): Promise<GlobalData> {
@@ -286,5 +329,12 @@ declare global {
     var destinyApi: DestinyAPI | undefined;
 }
 
-export const destinyApi =
-    global.destinyApi || (global.destinyApi = DestinyAPI.getInstance());
+// Create a singleton instance
+export const destinyApi = DestinyAPI.getInstance();
+
+// Preload the manifest data
+export async function preloadDestinyManifest() {
+    console.log("Preloading Destiny manifest data...");
+    await destinyApi.getManifestData();
+    console.log("Destiny manifest data preloaded");
+}

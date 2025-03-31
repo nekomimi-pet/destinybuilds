@@ -1,10 +1,15 @@
 import type React from "react"
 import "@/app/globals.css"
 import { Inter } from "next/font/google"
+import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Metadata, Viewport } from "next"
+import { preloadDestinyManifest } from "@/lib/destinyApi"
 
 const inter = Inter({ subsets: ["latin"] })
+
+// Preload destiny manifest data
+preloadDestinyManifest();
 
 export const metadata: Metadata = {
   title: {
