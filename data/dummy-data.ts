@@ -27,6 +27,27 @@ export const dummyBuilds: Build[] = [
     fragments: ["Ember of Wonder", "Ember of Searing", "Ember of Benevolence", "Ember of Torches", "Ember of Blistering"]
   },
   {
+    "id": "cenotaph",
+    "name": "Cenotaph Mask",
+    "class": "Warlock",
+    "subclass": "Solar",
+    "description": "Showcase build for a generic support Cenotaph build.",
+    "howItWorks": [
+      "Cenotaph is an exotic helmet that marks enemies with a debuff on damage that if an ally kills, generates special ammo for you and heavy ammo for your teammates. Highly useful in scenarios where ammo is scarce and useful such as Grandmasters as well as Contest/Master raids.",
+      "Cenotaph does not mandate any specific subclass choices, but can be used in a variety of ways. Popular weapon choices are Divinity and Navigator. Divinity provides a strong debuff and makes crits easier to land. Navigator provides Woven Mail for teammates as well as a grapple point for faster reloads for Strand teammates.",
+      "Well of Radiance is great for general support, but Strand or Void Warlocks have great neutral gameplay to help out with lackluster trace rifle damage."
+    ],
+    "howItWorks2": [],
+    "imageUrl": "/placeholder.svg?height=300&width=600",
+    "tags": ["Cenotaph", "Support", "Warlock"],
+    "exotics": ["Cenotaph Mask", "Divinity", "The Navigator"],
+    "keyMods": ["Impact Induction", "Focusing Strike"],
+    "targetStats": ["resilience", "recovery", "intellect"],
+    "mode": "PvE",
+    "aspects": ["Touch of Flame", "Icarus Dash"],
+    "fragments": ["Ember of Solace", "Ember of Torches", "Ember of Benevolence", "Ember of Empyrean"]
+  },
+  {
     "id": "geomag",
     "name": "Geomag Stablizers",
     "class": "Warlock",

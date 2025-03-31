@@ -70,7 +70,7 @@ class DestinyAPI {
             !item.itemTypeDisplayName?.toLowerCase().includes("deprecated") &&
             item.screenshot
         );
-
+        
         const exoticWeapons = items.filter(item =>
             item.inventory?.tierType === DestinyAPI.TIER_TYPES.EXOTIC &&
             item.itemType === DestinyAPI.ITEM_TYPES.WEAPON &&
