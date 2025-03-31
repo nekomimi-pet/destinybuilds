@@ -12,6 +12,7 @@ const inter = Inter({ subsets: ["latin"] })
 preloadDestinyManifest();
 
 export const metadata: Metadata = {
+  metadataBase: new URL("https://preview.destinybuilds.app"),
   title: {
     default: "Destiny 2 Builds - Find and Share Optimized Builds",
     template: "%s | Destiny 2 Builds"
@@ -25,7 +26,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     locale: "en_US",
-    url: "https://preview.nekomimi.pet",
+    url: "https://preview.destinybuilds.app",
     siteName: "Destiny 2 Builds",
     title: "Destiny 2 Builds - Find and Share Optimized Builds",
     description: "Discover and share optimized builds for Destiny 2. Find the best builds for PvE and PvP activities.",
@@ -80,17 +81,12 @@ export default function RootLayout({
                     </li>
                     <li>
                       <a href="/builds" className="hover:text-primary transition-colors">
-                        Builds
+                        All Builds
                       </a>
                     </li>
                     <li>
-                      <a href="/exotics" className="hover:text-primary transition-colors">
-                        Exotics
-                      </a>
-                    </li>
-                    <li>
-                      <a href="/mods" className="hover:text-primary transition-colors">
-                        Mods
+                      <a href="/season" className="hover:text-primary transition-colors">
+                        Episode: Heresy Builds
                       </a>
                     </li>
                   </ul>
