@@ -148,12 +148,29 @@ class DestinyAPI {
     }
 
     const classItemData: ClassItemData[] = []
+    const perksByName = new Map<string, Perk>();
+    
+    const perkInfo = (name: string, defaultColumn: 1 | 2 = 1): Perk => {
+      const perk = perksByName.get(name);
+      if (!perk) {
+        console.warn(`Perk with name "${name}" not found in manifest, using placeholder`);
+        return {
+          id: name.toLowerCase().replace(/\s+/g, '-'),
+          name: name,
+          description: `Description for ${name} not found`,
+          column: defaultColumn,
+          imageUrl: "/placeholder.svg",
+          tier: "B"
+        };
+      }
+      return perk;
+    };
 
     for (const [className, item] of Object.entries(classItems)) {
       console.log(`Processing ${className} class item (hash: ${item.hash})...`);
       
-      // Get base class item data
-      const classItemDef = manifestTables.DestinyInventoryItemDefinition[item.hash]
+      // Get base class item data using the itemMap
+      const classItemDef = itemMap.get(item.hash);
       if (!classItemDef) {
         console.error(`Missing DestinyInventoryItemDefinition for hash ${item.hash}`);
         continue;
@@ -177,7 +194,8 @@ class DestinyAPI {
       // Transform perks from column 1 (socket 10)
       const column1Perks = classItemSocketData.sockets["10"].rewardPlugItems.map(
         plugItem => {
-          const perkDef = manifestTables.DestinyInventoryItemDefinition[plugItem.plugItemHash]
+          // Use itemMap for perk lookup
+          const perkDef = itemMap.get(plugItem.plugItemHash);
           if (!perkDef) {
             console.error(`Missing perk definition for hash ${plugItem.plugItemHash}`);
             return null;
@@ -190,6 +208,8 @@ class DestinyAPI {
             imageUrl: `https://www.bungie.net${perkDef.displayProperties.icon}`,
             tier: "B" // Placeholder tier
           }
+          // Add to perk map for easy lookup
+          perksByName.set(perk.name, perk);
           return perk;
         }
       ).filter((perk): perk is NonNullable<typeof perk> => perk !== null)
@@ -197,7 +217,8 @@ class DestinyAPI {
       // Transform perks from column 2 (socket 11)
       const column2Perks = classItemSocketData.sockets["11"].rewardPlugItems.map(
         plugItem => {
-          const perkDef = manifestTables.DestinyInventoryItemDefinition[plugItem.plugItemHash]
+          // Use itemMap for perk lookup
+          const perkDef = itemMap.get(plugItem.plugItemHash);
           if (!perkDef) {
             console.error(`Missing perk definition for hash ${plugItem.plugItemHash}`);
             return null;
@@ -210,6 +231,8 @@ class DestinyAPI {
             imageUrl: `https://www.bungie.net${perkDef.displayProperties.icon}`,
             tier: "B" // Placeholder tier
           }
+          // Add to perk map for easy lookup
+          perksByName.set(perk.name, perk);
           return perk;
         }
       ).filter((perk): perk is NonNullable<typeof perk> => perk !== null)
@@ -229,32 +252,24 @@ class DestinyAPI {
 
     let hunterCombinations: PerkCombination[] = [];
 
+    // Now you can use perkInfo to retrieve perks by name
     hunterCombinations.push({
       id: "hunter-combination-1",
-      perk1: {
-        id: "spirit-ophidian",
-        name: "Spirit of the Ophidian",
-        description: "When your shields are destroyed, gain a significant Mobility boost for a short duration.",
-        column: 1,
-        imageUrl: "/placeholder.svg",
-        tier: "S"
-      },
-      perk2: {
-        id: "spirit-cyrtarachne",
-        name: "Spirit of the Cyrtarachne",
-        description: "While sliding, gain damage resistance against incoming attacks.",
-        column: 2,
-        imageUrl: "/placeholder.svg",
-        tier: "S"
-      },
-      tier: "S",
-      description: "This is a description",
+      perk1: perkInfo("Spirit of the Ophidian", 1),
+      perk2: perkInfo("Spirit of the Cyrtarachne", 2),
+      tier: "A",
+      description: "A great combination for PvP as handling is always helpful, and gaining Woven Mail is always a plus",
       aspects: ["Stylish Executioner", "Gunpowder Gamble"],
-      fragments: ["Subclass Synergy 1", "Subclass Synergy 2"]
+      fragments: ["Echo of Persistence", "Echo of Undermining"]
     });
 
     classItemData[2].combinations = hunterCombinations;
     
+    // Log available perks for reference
+    console.log("Available perks by name:");
+    perksByName.forEach((perk, name) => {
+      console.log(`- ${name} (Column ${perk.column})`);
+    });
 
     console.log(`Built data for ${classItemData.length} exotic class items`);
     return classItemData

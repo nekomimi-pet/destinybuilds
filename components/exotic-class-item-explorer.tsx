@@ -350,7 +350,7 @@ export default function ExoticClassItemExplorer({
                     <div>
                       <h4 className="text-sm font-medium mb-2 flex items-center">
                         <Swords className="h-4 w-4 mr-2" />
-                        Build Synergies
+                        Recommended Aspects
                       </h4>
                       <ul className="space-y-1">
                         {/* Aspects go here */}
@@ -360,7 +360,7 @@ export default function ExoticClassItemExplorer({
                     <div>
                       <h4 className="text-sm font-medium mb-2 flex items-center">
                         <Sparkles className="h-4 w-4 mr-2" />
-                        Subclass Synergies
+                        Recommended Fragments
                       </h4>
                       <div className="flex flex-wrap gap-2">
                         {/**Fragments goes here*/}
