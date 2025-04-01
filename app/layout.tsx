@@ -8,9 +8,6 @@ import { preloadDestinyManifest } from "@/lib/destinyApi"
 import { ModeToggle } from "@/components/mode-toggle"
 const inter = Inter({ subsets: ["latin"] })
 
-// Preload destiny manifest data
-preloadDestinyManifest();
-
 export const metadata: Metadata = {
   metadataBase: new URL("https://preview.destinybuilds.app"),
   title: {
@@ -57,11 +54,14 @@ export const viewport: Viewport = {
   maximumScale: 1,
 }
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: {
   children: React.ReactNode
 }) {
+  // Preload destiny manifest data
+  await preloadDestinyManifest();
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>

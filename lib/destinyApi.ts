@@ -1,11 +1,27 @@
 import { getDestinyManifest, getDestinyManifestSlice } from "bungie-api-ts/destiny2"
-import type { GlobalData } from "../types/destiny"
+import type { ClassItemData, GlobalData, GuardianClass, Perk, PerkCombination, PerkTier } from "../types/destiny"
 import type { DestinyManifestSlice, DestinyInventoryItemDefinition, HttpClientConfig } from "bungie-api-ts/destiny2"
 
+// Define extended manifest slice type that includes ClassItemManifest
+interface ExtendedDestinyManifestSlice extends DestinyManifestSlice<"DestinyInventoryItemDefinition"[] | "DestinySandboxPerkDefinition"[]> {
+  ClassItemManifest: {
+    [hash: number]: {
+      hash: number;
+      sockets: {
+        [socketIndex: string]: {
+          rewardPlugItems: Array<{
+            plugItemHash: number;
+          }>;
+        };
+      };
+    };
+  };
+}
+
 // Add static cache to preserve data between calls during build
-let staticManifestCache: GlobalData | null = null
-let staticLastFetchTime: number | null = null
-let initializationPromise: Promise<GlobalData> | null = null
+let staticManifestCache: GlobalData | null = null;
+let staticLastFetchTime: number | null = null;
+let initializationPromise: Promise<GlobalData> | null = null;
 
 class DestinyAPI {
   private static instance: DestinyAPI
@@ -61,19 +77,46 @@ class DestinyAPI {
     }
   }
 
-  private async fetchManifestTables() {
+  private async fetchManifestTables(): Promise<ExtendedDestinyManifestSlice> {
     try {
       console.log("Fetching Destiny manifest...")
       const destinyManifest = await getDestinyManifest(this.$http.bind(this))
+      console.log("Destiny manifest fetched successfully")
 
-      console.log("Fetching manifest tables...")
+      console.log("Fetching manifest tables...");
       const manifestTables = await getDestinyManifestSlice(this.$http.bind(this), {
         destinyManifest: destinyManifest.Response,
         tableNames: ["DestinyInventoryItemDefinition", "DestinySandboxPerkDefinition"],
         language: "en",
-      })
+      }) as ExtendedDestinyManifestSlice;
+      console.log("Main manifest tables fetched successfully")
 
-      console.log("Manifest tables fetched successfully")
+      console.log("Fetching Exotic Class Item Manifest from deepsight.gg...");
+      const classItemResponse = await fetch("https://deepsight.gg/manifest/DeepsightSocketExtendedDefinition.json");
+      if (!classItemResponse.ok) {
+        throw new Error(`Failed to fetch class item manifest: ${classItemResponse.status} ${classItemResponse.statusText}`);
+      }
+      const classItemManifest = await classItemResponse.json();
+      
+      // Validate that it's an object
+      if (typeof classItemManifest !== 'object' || classItemManifest === null) {
+        throw new Error('Class item manifest is not an object');
+      }
+
+      console.log(`Received class item manifest with ${Object.keys(classItemManifest).length} items`);
+      manifestTables.ClassItemManifest = classItemManifest;
+
+      // Validate that we have the required class item data
+      const requiredHashes = [266021826, 2273643087, 2809120022]; // Titan, Warlock, Hunter
+      const missingHashes = requiredHashes.filter(hash => 
+        !classItemManifest[hash]
+      );
+      
+      if (missingHashes.length > 0) {
+        throw new Error(`Missing required class items with hashes: ${missingHashes.join(', ')}`);
+      }
+
+      console.log("All manifest tables fetched and validated successfully")
       return manifestTables
     } catch (error) {
       console.error("Failed to fetch manifest tables:", error)
@@ -81,8 +124,144 @@ class DestinyAPI {
     }
   }
 
+  private async buildExoticClassItemData(
+    manifestTables: ExtendedDestinyManifestSlice,
+    itemMap: Map<number, DestinyInventoryItemDefinition>
+  ): Promise<ClassItemData[]> {
+    console.log("Building exotic class item data...");
+    const classItems = {
+      TITAN: {
+        hash: 266021826,
+        class: "Titan" as GuardianClass,
+        name: "Stoicism"
+      },
+      WARLOCK: {
+        hash: 2273643087,
+        class: "Warlock" as GuardianClass,
+        name: "Solipsism"
+      },
+      HUNTER: {
+        hash: 2809120022,
+        class: "Hunter" as GuardianClass,
+        name: "Relativism"
+      }
+    }
+
+    const classItemData: ClassItemData[] = []
+
+    for (const [className, item] of Object.entries(classItems)) {
+      console.log(`Processing ${className} class item (hash: ${item.hash})...`);
+      
+      // Get base class item data
+      const classItemDef = manifestTables.DestinyInventoryItemDefinition[item.hash]
+      if (!classItemDef) {
+        console.error(`Missing DestinyInventoryItemDefinition for hash ${item.hash}`);
+        continue;
+      }
+      
+      // Get socket data for perks
+      const classItemSocketData = manifestTables.ClassItemManifest[item.hash];
+      if (!classItemSocketData) {
+        console.error(`Missing ClassItemManifest data for hash ${item.hash}`);
+        continue;
+      }
+
+      console.log(`Found socket data for ${className}, processing perks...`);
+
+      // Validate socket data
+      if (!classItemSocketData.sockets["10"] || !classItemSocketData.sockets["11"]) {
+        console.error(`Missing required sockets 10 or 11 for ${className}`);
+        continue;
+      }
+
+      // Transform perks from column 1 (socket 10)
+      const column1Perks = classItemSocketData.sockets["10"].rewardPlugItems.map(
+        plugItem => {
+          const perkDef = manifestTables.DestinyInventoryItemDefinition[plugItem.plugItemHash]
+          if (!perkDef) {
+            console.error(`Missing perk definition for hash ${plugItem.plugItemHash}`);
+            return null;
+          }
+          const perk: Perk = {
+            id: plugItem.plugItemHash.toString(),
+            name: perkDef.displayProperties.name,
+            description: perkDef.displayProperties.description,
+            column: 1,
+            imageUrl: `https://www.bungie.net${perkDef.displayProperties.icon}`,
+            tier: "B" // Placeholder tier
+          }
+          return perk;
+        }
+      ).filter((perk): perk is NonNullable<typeof perk> => perk !== null)
+
+      // Transform perks from column 2 (socket 11)
+      const column2Perks = classItemSocketData.sockets["11"].rewardPlugItems.map(
+        plugItem => {
+          const perkDef = manifestTables.DestinyInventoryItemDefinition[plugItem.plugItemHash]
+          if (!perkDef) {
+            console.error(`Missing perk definition for hash ${plugItem.plugItemHash}`);
+            return null;
+          }
+          const perk: Perk = {
+            id: plugItem.plugItemHash.toString(),
+            name: perkDef.displayProperties.name,
+            description: perkDef.displayProperties.description,
+            column: 2,
+            imageUrl: `https://www.bungie.net${perkDef.displayProperties.icon}`,
+            tier: "B" // Placeholder tier
+          }
+          return perk;
+        }
+      ).filter((perk): perk is NonNullable<typeof perk> => perk !== null)
+
+      console.log(`Found ${column1Perks.length} perks in column 1 and ${column2Perks.length} perks in column 2`);
+
+      // Build the ClassItemData object
+      classItemData.push({
+        class: item.class,
+        name: classItemDef.displayProperties.name,
+        imageUrl: `https://www.bungie.net${classItemDef.displayProperties.icon}`,
+        description: classItemDef.flavorText,
+        perks: [...column1Perks, ...column2Perks],
+        combinations: [] // TODO: Add combinations from database later
+      })
+    }
+
+    let hunterCombinations: PerkCombination[] = [];
+
+    hunterCombinations.push({
+      id: "hunter-combination-1",
+      perk1: {
+        id: "spirit-ophidian",
+        name: "Spirit of the Ophidian",
+        description: "When your shields are destroyed, gain a significant Mobility boost for a short duration.",
+        column: 1,
+        imageUrl: "/placeholder.svg",
+        tier: "S"
+      },
+      perk2: {
+        id: "spirit-cyrtarachne",
+        name: "Spirit of the Cyrtarachne",
+        description: "While sliding, gain damage resistance against incoming attacks.",
+        column: 2,
+        imageUrl: "/placeholder.svg",
+        tier: "S"
+      },
+      tier: "S",
+      description: "This is a description",
+      aspects: ["Stylish Executioner", "Gunpowder Gamble"],
+      fragments: ["Subclass Synergy 1", "Subclass Synergy 2"]
+    });
+
+    classItemData[2].combinations = hunterCombinations;
+    
+
+    console.log(`Built data for ${classItemData.length} exotic class items`);
+    return classItemData
+  }
+
   private async getManifestItems(
-    manifestTables: DestinyManifestSlice<"DestinyInventoryItemDefinition"[] | "DestinySandboxPerkDefinition"[]>,
+    manifestTables: ExtendedDestinyManifestSlice,
   ): Promise<GlobalData> {
     console.log("Processing manifest items")
     const startTime = Date.now()
@@ -203,6 +382,9 @@ class DestinyAPI {
       const exoticArmorWithDesc = exoticArmor.map(addExoticPerkDescription)
       const exoticWeaponsWithDesc = exoticWeapons.map(addExoticPerkDescription)
 
+      // Build exotic class items data
+      const exoticClassItems = await this.buildExoticClassItemData(manifestTables, itemMap)
+
       const endTime = Date.now()
       const duration = endTime - startTime
       console.log(`Processing manifest items took ${duration}ms`)
@@ -214,6 +396,7 @@ class DestinyAPI {
         aspects: aspectsWithDesc,
         fragments: fragmentsWithDesc,
         sandboxPerks: sandboxPerks,
+        exoticClassItems: exoticClassItems
       }
     } catch (error) {
       console.error("Error processing manifest items:", error)
@@ -272,6 +455,11 @@ class DestinyAPI {
 
   // Ensure manifest is initialized before accessing data
   private async ensureManifestInitialized(): Promise<GlobalData> {
+    console.log("ensureManifestInitialized called, current state:", {
+      hasManifestData: !!this.manifestData,
+      isInitializing: this.isInitializing,
+      hasInitPromise: !!initializationPromise
+    })
     if (!this.manifestData) {
       return this.initializeManifest()
     }
@@ -354,6 +542,17 @@ class DestinyAPI {
   public async getFragmentsBySubclass(subclass: "Solar" | "Arc" | "Void" | "Strand" | "Stasis") {
     const data = await this.ensureManifestInitialized()
     return data.fragments.filter((fragment) => fragment.itemTypeDisplayName?.includes(`${subclass} Fragment`))
+  }
+
+  public async getExoticClassItems() {
+    console.log("getExoticClassItems called")
+    const data = await this.ensureManifestInitialized()
+    console.log("Manifest data:", {
+      hasData: !!data,
+      hasExoticClassItems: !!data?.exoticClassItems,
+      itemCount: data?.exoticClassItems?.length
+    })
+    return data.exoticClassItems
   }
 
   public async refreshManifestData() {

@@ -17,12 +17,12 @@ export interface Perk {
 
 export interface PerkCombination {
   id: string
-  perk1: string
-  perk2: string
+  perk1: Perk
+  perk2: Perk
   tier: PerkTier
   description: string
-  buildSynergies: string[]
-  subclassSynergies: string[]
+  aspects: string[]
+  fragments: string[]
 }
 
 export interface ClassItemData {
@@ -41,6 +41,7 @@ export interface GlobalData {
   aspects: DestinyInventoryItemDefinition[]
   fragments: DestinyInventoryItemDefinition[]
   sandboxPerks: DestinySandboxPerkDefinition[]
+  exoticClassItems: ClassItemData[]
 }
 
 export interface ArmorItem {

@@ -1,7 +1,6 @@
 "use client"
 
 import React from "react"
-
 import { useState, useEffect } from "react"
 import Image from "next/image"
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -11,8 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronRight, Info, Star, Zap, Shield, Swords, Sparkles, Flame, Bolt } from "lucide-react"
-import type { PerkTier, GuardianClass } from "@/types/destiny"
-import { exoticClassItemsData } from "@/data/dummy-eci"
+import type { PerkTier, GuardianClass, ClassItemData } from "@/types/destiny"
 
 // Helper function to get tier color
 const getTierColor = (tier: PerkTier) => {
@@ -67,33 +65,59 @@ const getSubclassIcon = (subclass: string) => {
   }
 }
 
-// Update the component definition to accept initialClass prop
 interface ExoticClassItemExplorerProps {
   initialClass?: GuardianClass
+  classItemsData: ClassItemData[]
 }
 
-export default function ExoticClassItemExplorer({ initialClass = "Hunter" }: ExoticClassItemExplorerProps) {
+export default function ExoticClassItemExplorer({ 
+  initialClass = "Hunter",
+  classItemsData = [] // Provide default empty array
+}: ExoticClassItemExplorerProps) {
   const [selectedClass, setSelectedClass] = useState<GuardianClass>(initialClass)
   const [selectedCombination, setSelectedCombination] = useState<string | null>(null)
   const [filterTier, setFilterTier] = useState<PerkTier | null>(null)
 
+  // Handle empty data case
+  if (!Array.isArray(classItemsData) || classItemsData.length === 0) {
+    return (
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-3">
+          <Card>
+            <CardContent className="p-8 text-center">
+              <Info className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+              <h3 className="text-xl font-bold mb-2">No Class Item Data Available</h3>
+              <p className="text-muted-foreground">
+                No exotic class items are currently available. Please try refreshing the page.
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   // Get the data for the selected class
-  const classData = exoticClassItemsData.find((data) => data.class === selectedClass) || exoticClassItemsData[0]
+  const classData = classItemsData.find((data) => data.class === selectedClass) || classItemsData[0]
 
   // Get the combinations for the selected class, filtered by tier if applicable
   const filteredCombinations = filterTier
-    ? classData.combinations.filter((combo) => combo.tier === filterTier)
-    : classData.combinations
+    ? classData?.combinations?.filter((combo) => combo.tier === filterTier) || []
+    : classData?.combinations || []
 
   // Get the selected combination data
   const selectedComboData = selectedCombination
-    ? classData.combinations.find((combo) => combo.id === selectedCombination)
+    ? classData?.combinations?.find((combo) => combo.id === selectedCombination)
     : filteredCombinations[0]
 
-  // Get the perks for the selected combination
-  const selectedPerk1 = selectedComboData ? classData.perks.find((perk) => perk.id === selectedComboData.perk1) : null
+  console.log(`Selected combo data: ${JSON.stringify(selectedComboData)}`);
 
-  const selectedPerk2 = selectedComboData ? classData.perks.find((perk) => perk.id === selectedComboData.perk2) : null
+  // Get the perks for the selected combination
+  const selectedPerk1 = selectedComboData?.perk1;
+  const selectedPerk2 = selectedComboData?.perk2;
+
+  console.log(`Selected perk 1: ${JSON.stringify(selectedPerk1)}`);
+  console.log(`Selected perk 2: ${JSON.stringify(selectedPerk2)}`);
 
   // Set the first combination as selected when changing class or filter
   useEffect(() => {
@@ -102,7 +126,7 @@ export default function ExoticClassItemExplorer({ initialClass = "Hunter" }: Exo
     } else {
       setSelectedCombination(null)
     }
-  }, [selectedClass, filterTier])
+  }, [selectedClass, filterTier, filteredCombinations])
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -183,8 +207,8 @@ export default function ExoticClassItemExplorer({ initialClass = "Hunter" }: Exo
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-3">
                 {filteredCombinations.map((combo) => {
-                  const perk1 = classData.perks.find((p) => p.id === combo.perk1)
-                  const perk2 = classData.perks.find((p) => p.id === combo.perk2)
+                  const perk1 = combo.perk1;
+                  const perk2 = combo.perk2;
 
                   return (
                     <Button
@@ -199,21 +223,7 @@ export default function ExoticClassItemExplorer({ initialClass = "Hunter" }: Exo
                         <div className="flex items-center justify-between w-full mb-2">
                           <div className="flex items-center">
                             <Badge className={`mr-2 ${getTierColor(combo.tier)}`}>Tier {combo.tier}</Badge>
-                            {combo.subclassSynergies.includes("Solar") && (
-                              <Flame className="h-4 w-4 text-destiny-solar mr-1" />
-                            )}
-                            {combo.subclassSynergies.includes("Arc") && (
-                              <Bolt className="h-4 w-4 text-destiny-arc mr-1" />
-                            )}
-                            {combo.subclassSynergies.includes("Void") && (
-                              <Sparkles className="h-4 w-4 text-destiny-void mr-1" />
-                            )}
-                            {combo.subclassSynergies.includes("Strand") && (
-                              <Zap className="h-4 w-4 text-destiny-strand mr-1" />
-                            )}
-                            {combo.subclassSynergies.includes("Stasis") && (
-                              <Sparkles className="h-4 w-4 text-destiny-stasis mr-1" />
-                            )}
+                            {/*Aspects go here*/}
                           </div>
                           <ChevronRight className="h-4 w-4 text-muted-foreground" />
                         </div>
@@ -343,12 +353,7 @@ export default function ExoticClassItemExplorer({ initialClass = "Hunter" }: Exo
                         Build Synergies
                       </h4>
                       <ul className="space-y-1">
-                        {selectedComboData.buildSynergies.map((synergy) => (
-                          <li key={synergy} className="flex items-center text-sm">
-                            <div className="w-1.5 h-1.5 rounded-full bg-primary mr-2"></div>
-                            {synergy}
-                          </li>
-                        ))}
+                        {/* Aspects go here */}
                       </ul>
                     </div>
 
@@ -358,207 +363,14 @@ export default function ExoticClassItemExplorer({ initialClass = "Hunter" }: Exo
                         Subclass Synergies
                       </h4>
                       <div className="flex flex-wrap gap-2">
-                        {selectedComboData.subclassSynergies.map((subclass) => (
-                          <div
-                            key={subclass}
-                            className="flex items-center px-2 py-1 rounded-full text-sm"
-                            style={{
-                              backgroundColor:
-                                subclass === "Solar"
-                                  ? "rgba(245, 121, 59, 0.2)"
-                                  : subclass === "Arc"
-                                    ? "rgba(122, 236, 243, 0.2)"
-                                    : subclass === "Void"
-                                      ? "rgba(177, 132, 197, 0.2)"
-                                      : subclass === "Strand"
-                                        ? "rgba(63, 215, 128, 0.2)"
-                                        : subclass === "Stasis"
-                                          ? "rgba(77, 136, 255, 0.2)"
-                                          : "rgba(255, 255, 255, 0.1)",
-                            }}
-                          >
-                            {getSubclassIcon(subclass)}
-                            <span className="ml-1">{subclass}</span>
-                          </div>
-                        ))}
+                        {/**Fragments goes here*/}
                       </div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Perk Matrix Visualization */}
-              <Card>
-                <CardHeader className="pb-3">
-                  <CardTitle className="flex items-center">
-                    <Shield className="h-5 w-5 mr-2" />
-                    All Possible Combinations
-                  </CardTitle>
-                  <CardDescription>
-                    Explore all 64 possible perk combinations for {selectedClass} exotic class items
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="overflow-x-auto">
-                    <div className="min-w-[600px]">
-                      <div className="grid grid-cols-9 gap-1">
-                        {/* Header row */}
-                        <div className="col-span-1"></div>
-                        {classData.perks
-                          .filter((perk) => perk.column === 2)
-                          .map((perk) => (
-                            <div key={perk.id} className="p-1">
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <div className="relative w-10 h-10 bg-black/20 rounded mx-auto">
-                                      <Image
-                                        src={perk.imageUrl || "/placeholder.svg"}
-                                        alt={perk.name}
-                                        fill
-                                        className="object-contain p-1"
-                                      />
-                                      <div className="absolute -top-2 -right-2">
-                                        <Badge className={`text-xs ${getTierColor(perk.tier)}`}>{perk.tier}</Badge>
-                                      </div>
-                                    </div>
-                                  </TooltipTrigger>
-                                  <TooltipContent side="top" className="max-w-xs">
-                                    <p className="font-bold">{perk.name}</p>
-                                    <p className="text-xs">{perk.description}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
-                            </div>
-                          ))}
-
-                        {/* Matrix cells */}
-                        {classData.perks
-                          .filter((perk) => perk.column === 1)
-                          .map((perk1) => (
-                            <React.Fragment key={perk1.id}>
-                              <div className="p-1">
-                                <TooltipProvider>
-                                  <Tooltip>
-                                    <TooltipTrigger asChild>
-                                      <div className="relative w-10 h-10 bg-black/20 rounded">
-                                        <Image
-                                          src={perk1.imageUrl || "/placeholder.svg"}
-                                          alt={perk1.name}
-                                          fill
-                                          className="object-contain p-1"
-                                        />
-                                        <div className="absolute -top-2 -right-2">
-                                          <Badge className={`text-xs ${getTierColor(perk1.tier)}`}>{perk1.tier}</Badge>
-                                        </div>
-                                      </div>
-                                    </TooltipTrigger>
-                                    <TooltipContent side="left" className="max-w-xs">
-                                      <p className="font-bold">{perk1.name}</p>
-                                      <p className="text-xs">{perk1.description}</p>
-                                    </TooltipContent>
-                                  </Tooltip>
-                                </TooltipProvider>
-                              </div>
-
-                              {classData.perks
-                                .filter((perk) => perk.column === 2)
-                                .map((perk2) => {
-                                  // Find if this combination exists in our predefined combinations
-                                  const combo = classData.combinations.find(
-                                    (c) => c.perk1 === perk1.id && c.perk2 === perk2.id,
-                                  )
-
-                                  return (
-                                    <div
-                                      key={`${perk1.id}-${perk2.id}`}
-                                      className={`p-1 ${
-                                        selectedComboData.perk1 === perk1.id && selectedComboData.perk2 === perk2.id
-                                          ? "ring-2 ring-primary rounded"
-                                          : ""
-                                      }`}
-                                    >
-                                      <TooltipProvider>
-                                        <Tooltip>
-                                          <TooltipTrigger asChild>
-                                            <Button
-                                              variant="ghost"
-                                              size="sm"
-                                              className={`w-10 h-10 p-0 ${
-                                                combo ? getTierBgColor(combo.tier) : "bg-gray-100 dark:bg-gray-800"
-                                              }`}
-                                              onClick={() => {
-                                                if (combo) {
-                                                  setSelectedCombination(combo.id)
-                                                }
-                                              }}
-                                              disabled={!combo}
-                                            >
-                                              {combo ? (
-                                                <Star
-                                                  className={`h-5 w-5 ${
-                                                    combo.tier === "S"
-                                                      ? "text-yellow-500"
-                                                      : combo.tier === "A"
-                                                        ? "text-green-500"
-                                                        : combo.tier === "B"
-                                                          ? "text-blue-500"
-                                                          : "text-gray-400"
-                                                  }`}
-                                                />
-                                              ) : (
-                                                <div className="h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-600"></div>
-                                              )}
-                                            </Button>
-                                          </TooltipTrigger>
-                                          <TooltipContent side="top">
-                                            {combo ? (
-                                              <>
-                                                <p className="font-bold">Tier {combo.tier} Combination</p>
-                                                <p className="text-xs">
-                                                  {perk1.name} + {perk2.name}
-                                                </p>
-                                                <p className="text-xs mt-1">Click to view details</p>
-                                              </>
-                                            ) : (
-                                              <p className="text-xs">Untested combination</p>
-                                            )}
-                                          </TooltipContent>
-                                        </Tooltip>
-                                      </TooltipProvider>
-                                    </div>
-                                  )
-                                })}
-                            </React.Fragment>
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center justify-center mt-4 gap-4">
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1"></div>
-                      <span className="text-xs">S-Tier</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
-                      <span className="text-xs">A-Tier</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
-                      <span className="text-xs">B-Tier</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-gray-400 mr-1"></div>
-                      <span className="text-xs">C-Tier</span>
-                    </div>
-                    <div className="flex items-center">
-                      <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 mr-1"></div>
-                      <span className="text-xs">Untested</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+              {/* Perk Matrix Visualization - Removed from here since it's now always visible below */}
             </CardContent>
           </Card>
         ) : (
@@ -578,6 +390,179 @@ export default function ExoticClassItemExplorer({ initialClass = "Hunter" }: Exo
             </CardContent>
           </Card>
         )}
+
+        {/* Perk Matrix Visualization - Always visible */}
+        <Card className="mt-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center">
+              <Shield className="h-5 w-5 mr-2" />
+              All Possible Combinations
+            </CardTitle>
+            <CardDescription>
+              Explore all 64 possible perk combinations for {selectedClass} exotic class items
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <div className="min-w-[600px]">
+                <div className="grid grid-cols-9 gap-1">
+                  {/* Header row */}
+                  <div className="col-span-1"></div>
+                  {classData.perks
+                    .filter((perk) => perk.column === 2)
+                    .map((perk) => (
+                      <div key={perk.id} className="p-1">
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <div className="relative w-10 h-10 bg-black/20 rounded mx-auto">
+                                <Image
+                                  src={perk.imageUrl || "/placeholder.svg"}
+                                  alt={perk.name}
+                                  fill
+                                  className="object-contain p-1"
+                                />
+                                <div className="absolute -top-2 -right-2">
+                                  <Badge className={`text-xs ${getTierColor(perk.tier)}`}>{perk.tier}</Badge>
+                                </div>
+                              </div>
+                            </TooltipTrigger>
+                            <TooltipContent side="top" className="max-w-xs">
+                              <p className="font-bold">{perk.name}</p>
+                              <p className="text-xs">{perk.description}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    ))}
+
+                  {/* Matrix cells */}
+                  {classData.perks
+                    .filter((perk) => perk.column === 1)
+                    .map((perk1) => (
+                      <React.Fragment key={perk1.id}>
+                        <div className="p-1">
+                          <TooltipProvider>
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <div className="relative w-10 h-10 bg-black/20 rounded">
+                                  <Image
+                                    src={perk1.imageUrl || "/placeholder.svg"}
+                                    alt={perk1.name}
+                                    fill
+                                    className="object-contain p-1"
+                                  />
+                                  <div className="absolute -top-2 -right-2">
+                                    <Badge className={`text-xs ${getTierColor(perk1.tier)}`}>{perk1.tier}</Badge>
+                                  </div>
+                                </div>
+                              </TooltipTrigger>
+                              <TooltipContent side="left" className="max-w-xs">
+                                <p className="font-bold">{perk1.name}</p>
+                                <p className="text-xs">{perk1.description}</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          </TooltipProvider>
+                        </div>
+
+                        {classData.perks
+                          .filter((perk) => perk.column === 2)
+                          .map((perk2) => {
+                            // Find if this combination exists in our predefined combinations
+                            const combo = classData.combinations.find(
+                              (c) => c.perk1.id === perk1.id && c.perk2.id === perk2.id,
+                            )
+
+                            return (
+                              <div
+                                key={`${perk1.id}-${perk2.id}`}
+                                className={`p-1 ${
+                                  selectedComboData && selectedComboData.perk1.id === perk1.id && selectedComboData.perk2.id === perk2.id
+                                    ? "ring-2 ring-primary rounded"
+                                    : ""
+                                }`}
+                              >
+                                <TooltipProvider>
+                                  <Tooltip>
+                                    <TooltipTrigger asChild>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className={`w-10 h-10 p-0 ${
+                                          combo ? getTierBgColor(combo.tier) : "bg-gray-100 dark:bg-gray-800"
+                                        }`}
+                                        onClick={() => {
+                                          if (combo) {
+                                            setSelectedCombination(combo.id)
+                                          }
+                                        }}
+                                        disabled={!combo}
+                                      >
+                                        {combo ? (
+                                          <Star
+                                            className={`h-5 w-5 ${
+                                              combo.tier === "S"
+                                                ? "text-yellow-500"
+                                                : combo.tier === "A"
+                                                  ? "text-green-500"
+                                                  : combo.tier === "B"
+                                                    ? "text-blue-500"
+                                                    : "text-gray-400"
+                                            }`}
+                                          />
+                                        ) : (
+                                          <div className="h-5 w-5 rounded-full bg-gray-300 dark:bg-gray-600"></div>
+                                        )}
+                                      </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="top">
+                                      {combo ? (
+                                        <>
+                                          <p className="font-bold">Tier {combo.tier} Combination</p>
+                                          <p className="text-xs">
+                                            {perk1.name} + {perk2.name}
+                                          </p>
+                                          <p className="text-xs mt-1">Click to view details</p>
+                                        </>
+                                      ) : (
+                                        <p className="text-xs">Untested combination</p>
+                                      )}
+                                    </TooltipContent>
+                                  </Tooltip>
+                                </TooltipProvider>
+                              </div>
+                            )
+                          })}
+                      </React.Fragment>
+                    ))}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center mt-4 gap-4">
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-yellow-500 mr-1"></div>
+                <span className="text-xs">S-Tier</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-green-500 mr-1"></div>
+                <span className="text-xs">A-Tier</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-blue-500 mr-1"></div>
+                <span className="text-xs">B-Tier</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-gray-400 mr-1"></div>
+                <span className="text-xs">C-Tier</span>
+              </div>
+              <div className="flex items-center">
+                <div className="w-3 h-3 rounded-full bg-gray-300 dark:bg-gray-600 mr-1"></div>
+                <span className="text-xs">Untested</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

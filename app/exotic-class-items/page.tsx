@@ -1,7 +1,7 @@
 import type { Metadata } from "next"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
-import ExoticClassItemExplorer from "@/components/exotic-class-item-explorer"
+import { ExoticClassItemExplorerContainer } from "@/components/exotic-class-item-explorer-container"
 
 export const metadata: Metadata = {
   title: "Exotic Class Item Explorer - Destiny Builds",
@@ -25,7 +25,7 @@ export default function ExoticClassItemsPage() {
         </p>
       </div>
 
-      <ExoticClassItemExplorer />
+      <ExoticClassItemExplorerContainer />
     </main>
   )
 }

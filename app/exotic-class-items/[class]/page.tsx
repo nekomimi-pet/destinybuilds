@@ -3,6 +3,7 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import { notFound } from "next/navigation"
 import ExoticClassItemExplorer from "@/components/exotic-class-item-explorer"
+import { ExoticClassItemExplorerContainer } from "@/components/exotic-class-item-explorer-container"
 
 type Props = {
   params: { class: string }
@@ -45,7 +46,7 @@ export default function ClassSpecificExoticItemPage({ params }: Props) {
         </p>
       </div>
 
-      <ExoticClassItemExplorer initialClass={guardianClass} />
+      <ExoticClassItemExplorerContainer initialClass={guardianClass} />
     </main>
   )
 }
