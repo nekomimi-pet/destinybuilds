@@ -2,6 +2,38 @@ import { DestinyInventoryItemDefinition, DestinySandboxPerkDefinition } from "bu
 
 export type ExoticType = "Armor" | "Weapon";
 
+export type PerkTier = "S" | "A" | "B" | "C"
+export type GuardianClass = "Hunter" | "Warlock" | "Titan"
+export type Subclass = "Solar" | "Arc" | "Void" | "Strand" | "Stasis"
+
+export interface Perk {
+  id: string
+  name: string
+  description: string
+  column: 1 | 2
+  imageUrl: string
+  tier: PerkTier
+}
+
+export interface PerkCombination {
+  id: string
+  perk1: string
+  perk2: string
+  tier: PerkTier
+  description: string
+  buildSynergies: string[]
+  subclassSynergies: string[]
+}
+
+export interface ClassItemData {
+  class: GuardianClass
+  name: string
+  imageUrl: string
+  description: string
+  perks: Perk[]
+  combinations: PerkCombination[]
+}
+
 export interface GlobalData {
   exoticArmor: DestinyInventoryItemDefinition[]
   exoticWeapons: DestinyInventoryItemDefinition[]
@@ -51,7 +83,7 @@ export interface Aspect {
   name: string
   description: string
   imageUrl: string
-  subclass: "Solar" | "Arc" | "Void" | "Strand" | "Stasis"
+  
 }
 
 export interface Fragment {
@@ -59,14 +91,14 @@ export interface Fragment {
   name: string
   description: string
   imageUrl: string
-  subclass: "Solar" | "Arc" | "Void" | "Strand" | "Stasis"
+  subclass: Subclass
 }
 
 export interface Build {
   id: string
   name: string
-  class: "Hunter" | "Titan" | "Warlock"
-  subclass: "Solar" | "Arc" | "Void" | "Strand" | "Stasis"
+  class: GuardianClass
+  subclass: Subclass
   description: string
   howItWorks: string[]
   howItWorks2?: string[]

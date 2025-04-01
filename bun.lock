@@ -40,6 +40,7 @@
         "clsx": "^2.1.1",
         "cmdk": "1.0.4",
         "date-fns": "4.1.0",
+        "deepsight.gg": "^1.0.1098",
         "embla-carousel-react": "8.5.1",
         "input-otp": "1.4.1",
         "lucide-react": "^0.485.0",
@@ -381,6 +382,8 @@
     "date-fns": ["date-fns@4.1.0", "", {}, "sha512-Ukq0owbQXxa/U3EGtsdVBkR1w7KOQ5gIBqdH2hkvknzZPYvBxb/aa6E8L7tmjFtkwZBu3UXBbjIgPo/Ez4xaNg=="],
 
     "decimal.js-light": ["decimal.js-light@2.5.1", "", {}, "sha512-qIMFpTMZmny+MMIitAB6D7iVPEorVw6YQRWkvarTkT4tBeSLLiHzcwj6q0MmYSFCiVpiqPJTJEYIrpcPzVEIvg=="],
+
+    "deepsight.gg": ["deepsight.gg@1.0.1098", "", { "dependencies": { "bungie-api-ts": "^5.0.0" } }, "sha512-Ey7PnwVpJFyK4XmG6AV2h0ivzeTwBHrqzxicgnt5ElqJG4xfJDYsNKCqPLBLTUgjcK4Pu86E+QFmZpML5ExYWw=="],
 
     "detect-libc": ["detect-libc@2.0.3", "", {}, "sha512-bwy0MGW55bG41VqxxypOsdSdGqLwXPI/focwgTYCFMbdUiBAxLg9CFzG08sz2aqzknwiX7Hkl0bQENjg8iLByw=="],
 

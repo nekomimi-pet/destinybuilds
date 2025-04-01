@@ -5,7 +5,7 @@ import { cn } from "@/lib/utils"
 import { ThemeProvider } from "@/components/theme-provider"
 import { Metadata, Viewport } from "next"
 import { preloadDestinyManifest } from "@/lib/destinyApi"
-
+import { ModeToggle } from "@/components/mode-toggle"
 const inter = Inter({ subsets: ["latin"] })
 
 // Preload destiny manifest data
@@ -73,7 +73,7 @@ export default function RootLayout({
                   <h1 className="text-2xl font-bold">Destiny Builds</h1>
                 </div>
                 <nav>
-                  <ul className="flex space-x-6">
+                  <ul className="flex items-center space-x-6">
                     <li>
                       <a href="/" className="hover:text-primary transition-colors">
                         Home
@@ -85,9 +85,17 @@ export default function RootLayout({
                       </a>
                     </li>
                     <li>
+                      <a href="/exotic-class-items" className="hover:text-primary transition-colors">
+                        Exotic Class Items
+                      </a>
+                    </li>
+                    <li>
                       <a href="/season" className="hover:text-primary transition-colors">
                         Episode: Heresy Builds
                       </a>
+                    </li>
+                    <li>
+                      <ModeToggle />
                     </li>
                   </ul>
                 </nav>
