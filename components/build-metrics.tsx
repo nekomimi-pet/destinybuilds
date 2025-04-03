@@ -8,9 +8,10 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 
 interface BuildMetricsProps {
   metrics: BuildMetricsType
+  isVariationMetrics?: boolean
 }
 
-export default function BuildMetrics({ metrics }: BuildMetricsProps) {
+export default function BuildMetrics({ metrics, isVariationMetrics }: BuildMetricsProps) {
   const [showTooltips, setShowTooltips] = useState(true)
 
   const getColorForRating = (rating: number) => {
@@ -53,7 +54,12 @@ export default function BuildMetrics({ metrics }: BuildMetricsProps) {
   return (
     <div className="bg-card rounded-lg p-6 mb-8">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-bold">Build Performance</h2>
+        <div className="flex items-center gap-2">
+          <h2 className="text-xl font-bold">Build Performance</h2>
+          {isVariationMetrics && (
+            <Badge className="bg-primary/10 text-primary hover:bg-primary/20">Custom Metrics</Badge>
+          )}
+        </div>
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>

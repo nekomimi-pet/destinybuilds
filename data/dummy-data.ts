@@ -120,6 +120,7 @@ export const dummyBuilds: Build[] = [
       "The key thing with this build isn't really maxing intellect and forgetting about it, but using the fragments and mods to spam grenades and melees to maximize super energy.",
       "Gunpowder Gamble is great for this as its essentially a free grenade every so often for more super. Knock 'Em Down isn't essential, but the longer super time may be useful.",
       "If you did not know too, Celestial Nighthawk applies to Still Hunt as well and turns the three bullets into one super bullet.",
+      "Be sure to not stand in a Well of Radiance until after you fire your Golden Gun shot. Nowhere in the game is it explained that you gain a boost to Golden Gun while you are Radiant, and Well of Radiance overrides Radiant.",
     ],
     howItWorks2: [
       "Neutral Solar Hunter loop applies. Throwing knife attacks give radiant. Giving allies radiant gives you more energy regen. Scorching gives you melee energy. Ignition kills gives orbs and grenade energy.",
@@ -150,6 +151,34 @@ export const dummyBuilds: Build[] = [
       contentBestFor: ["Raids", "Dungeons"],
       teamplayOrientation: 5,
     },
+    variations: [
+      {
+        id: "nighthawk-prismatic",
+        name: "Celestial Nighthawk - Prismatic",
+        description: "A Prismatic variation of the Celestial Nighthawk build with focus on maximizing super energy.",
+        subclass: "Prismatic",
+        aspects: ["Stylish Executioner", "Gunpowder Gamble"],
+        fragments: ["Facet of Courage", "Facet of Hope", "Facet of Dawn", "Facet of Purpose"],
+        exotics: ["Celestial Nighthawk", "Still Hunt"],
+        metrics: {
+          versatility: 7,
+          easeOfUse: 8,
+          survivability: 6,
+          dps: 10,
+          crowdControl: 5,
+          buffHealingSupport: 6,
+          contentBestFor: ["Raids", "Dungeons"],
+          teamplayOrientation: 6
+        },
+        howItWorks: [
+          "This Prismatic variation offers ways to boost damage and debuff enemies with the fragments. Each of the melees have their own debuffs, but all will proc Radiant with Facet of Dawn which will give a 20% damage boost.",
+          "Duskfield Grenade is a great way to proc Facet of Courage to give yourself a 10% increased damage boost to your Golden Gun. Transcendence gives a 5% weapon damage boost that can STACK with EVERYTHING including Well of Radiance and Radiant."
+        ],
+        howItWorks2: [
+          "Be sure to not stand in a Well of Radiance until after you fire your Golden Gun shot. Nowhere in the game is it explained that you gain a boost to Golden Gun while you are Radiant, and Well of Radiance overrides Radiant."
+        ]
+      }
+    ]
   },
   {
     id: "cenotaph",

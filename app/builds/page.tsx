@@ -3,6 +3,8 @@ import Link from "next/link"
 import { dummyBuilds } from "@/data/dummy-data"
 import { destinyApi } from "@/lib/destinyApi"
 import { getSubclassColor } from "@/lib/colors"
+import type { Build, BuildVariation, GuardianClass, Subclass, BuildMetrics } from "@/types/destiny"
+
 export const metadata = {
   title: "Destiny Builds - Browse by Class and Subclass",
   description: "Find optimized Destiny 2 builds sorted by class and subclass",
@@ -18,10 +20,33 @@ const subclassOrder = {
   Prismatic: 5,
 }
 
+// UI-specific build interface for display purposes
+interface UiBuild {
+  id: string;
+  name: string;
+  class: GuardianClass;
+  subclass: Subclass;
+  description: string;
+  howItWorks: string[];
+  howItWorks2?: string[];
+  imageUrl: string;
+  tags: string[];
+  exotics: { name: string; imageUrl: string }[];
+  keyMods: string[];
+  targetStats: ("mobility" | "resilience" | "recovery" | "discipline" | "intellect" | "strength")[];
+  mode: "PvE" | "PvP";
+  aspects: string[];
+  fragments: string[];
+  metrics?: BuildMetrics;
+  variations?: BuildVariation[];
+  isVariation?: boolean;
+  parentBuildId?: string;
+}
+
 export default async function BuildsPage() {
   // Fetch and process builds
-  const builds = await Promise.all(
-    dummyBuilds.map(async (build) => ({
+  const baseBuilds = await Promise.all(
+    dummyBuilds.map(async (build): Promise<UiBuild> => ({
       ...build,
       exotics: await Promise.all(
         build.exotics.map(async (exoticName) => {
@@ -35,24 +60,80 @@ export default async function BuildsPage() {
       ),
     })),
   )
+  
+  // Process variations with different subclasses as separate builds
+  const variationBuilds = (await Promise.all(
+    baseBuilds.flatMap(async (build) => {
+      if (!build.variations) return []
+      
+      // Only include variations with different subclasses
+      const subclassVariations = build.variations.filter(variation => 
+        variation.subclass && variation.subclass !== build.subclass
+      )
+      
+      if (subclassVariations.length === 0) return []
+      
+      return Promise.all(
+        subclassVariations.map(async (variation): Promise<UiBuild> => {
+          // For variations we need to merge with the parent build
+          const exoticNames = variation.exotics || build.exotics.map(e => e.name)
+          
+          // Fetch exotic data for the variation
+          const exoticsData = await Promise.all(
+            exoticNames.map(async (exoticName) => {
+              try {
+                const exoticData =
+                  (await destinyApi.getExoticArmor(exoticName)) || (await destinyApi.getExoticWeapon(exoticName))
+                return {
+                  name: exoticName,
+                  imageUrl: exoticData ? `https://www.bungie.net${exoticData.displayProperties.icon}` : "/placeholder.svg",
+                }
+              } catch {
+                return {
+                  name: exoticName,
+                  imageUrl: "/placeholder.svg",
+                }
+              }
+            })
+          )
+          
+          return {
+            ...build,
+            id: variation.id,
+            name: variation.name || build.name,
+            description: variation.description || build.description,
+            subclass: variation.subclass!,
+            aspects: variation.aspects || build.aspects,
+            fragments: variation.fragments || build.fragments,
+            exotics: exoticsData,
+            isVariation: true,
+            parentBuildId: build.id,
+            // Use variation metrics if available, otherwise use parent metrics
+            metrics: variation.metrics || build.metrics
+          }
+        })
+      )
+    })
+  )).flat()
+  
+  // Combine base builds with variation builds
+  const builds: UiBuild[] = [...baseBuilds, ...variationBuilds]
 
   // Group builds by class
-  const classBuckets = {
-    Hunter: [] as typeof builds,
-    Titan: [] as typeof builds,
-    Warlock: [] as typeof builds,
+  const classBuckets: Record<GuardianClass, UiBuild[]> = {
+    Hunter: [],
+    Titan: [],
+    Warlock: [],
   }
 
   // Sort builds into class buckets
   builds.forEach((build) => {
-    if (build.class in classBuckets) {
-      classBuckets[build.class as keyof typeof classBuckets].push(build)
-    }
+    classBuckets[build.class].push(build)
   })
 
   // For each class, sort builds by subclass
   Object.keys(classBuckets).forEach((className) => {
-    classBuckets[className as keyof typeof classBuckets].sort((a, b) => {
+    classBuckets[className as GuardianClass].sort((a, b) => {
       const orderA = subclassOrder[a.subclass as keyof typeof subclassOrder] ?? 99;
       const orderB = subclassOrder[b.subclass as keyof typeof subclassOrder] ?? 99;
       return orderA - orderB;
@@ -97,6 +178,11 @@ export default async function BuildsPage() {
                             <h4 className="font-bold text-lg group-hover:text-primary transition-colors">
                               {build.name}
                             </h4>
+                            {build.isVariation && (
+                              <div className="inline-flex items-center text-xs bg-secondary/20 text-secondary px-2 py-0.5 rounded-full mb-2">
+                                Variation
+                              </div>
+                            )}
                             <div className="flex items-center space-x-2 my-2">
                               {build.tags.map((tag) => (
                                 <span key={tag} className="text-xs bg-primary/10 text-primary px-2 py-0.5 rounded-full">

@@ -8,6 +8,7 @@ import { dummyBuilds } from "@/data/dummy-data"
 import { destinyApi } from "@/lib/destinyApi"
 import type { Metadata } from "next"
 import { parseTextWithGameItems } from "@/lib/parseGameItems"
+import BuildVariationsDropdown from "@/components/build-variations-dropdown"
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   try {
@@ -58,7 +59,73 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
 export default async function BuildPage({ params }: { params: { id: string } }) {
   try {
     const resolvedParams = await params
-    const build = (await dummyBuilds.find((b) => b.id === resolvedParams.id)) || dummyBuilds[0]
+    
+    // Try to find the build directly first
+    let build = await dummyBuilds.find((b) => b.id === resolvedParams.id)
+    
+    // Look for a parent build if this is a variation
+    const parentBuild = dummyBuilds.find(b => 
+      b.variations?.some(v => v.id === resolvedParams.id)
+    )
+
+    // Flag to track if the current build is using variation-specific metrics
+    let isUsingVariationMetrics = false
+    
+    // If it's a variation, merge parent build with variation data
+    if (parentBuild) {
+      const variation = parentBuild.variations?.find(v => v.id === resolvedParams.id)
+      if (variation) {
+        // Set the flag if this variation has custom metrics
+        isUsingVariationMetrics = !!variation.metrics
+        
+        build = {
+          ...parentBuild,
+          id: variation.id,
+          name: variation.name,
+          description: variation.description,
+          // Override subclass if specified in variation
+          ...(variation.subclass && { subclass: variation.subclass }),
+          // Override aspects if specified in variation
+          ...(variation.aspects && { aspects: variation.aspects }),
+          // Override fragments if specified in variation
+          ...(variation.fragments && { fragments: variation.fragments }),
+          // Override exotics if specified in variation
+          ...(variation.exotics && { exotics: variation.exotics }),
+          // Override howItWorks if specified in variation
+          ...(variation.howItWorks && { howItWorks: variation.howItWorks }),
+          // Override howItWorks2 if specified in variation
+          ...(variation.howItWorks2 && { howItWorks2: variation.howItWorks2 }),
+          // Override metrics if specified in variation
+          ...(variation.metrics && { metrics: variation.metrics }),
+        }
+      }
+    }
+    
+    // Fallback to the first build if nothing was found
+    if (!build) {
+      build = dummyBuilds[0]
+    }
+
+    // Determine which builds to show in the variations dropdown
+    const buildsForDropdown = parentBuild 
+      ? [
+          { id: parentBuild.id, name: parentBuild.name, subclass: parentBuild.subclass },
+          ...(parentBuild.variations?.map(v => ({
+            id: v.id,
+            name: v.name,
+            subclass: v.subclass || parentBuild.subclass,
+            hasCustomMetrics: !!v.metrics
+          })) || [])
+        ]
+      : [
+          { id: build.id, name: build.name, subclass: build.subclass },
+          ...(build.variations?.map(v => ({
+            id: v.id,
+            name: v.name,
+            subclass: v.subclass || build.subclass,
+            hasCustomMetrics: !!v.metrics
+          })) || [])
+        ]
 
     // Fetch exotic and mod data
     const exoticsData = await Promise.all(
@@ -165,14 +232,23 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
 
     return (
       <main className="container mx-auto px-4 py-8">
-        <Link href="/" className="flex items-center text-primary mb-6 hover:underline">
+        <Link href="/builds" className="flex items-center text-primary mb-6 hover:underline">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to all builds
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
-            <h1 className="text-4xl font-bold mb-2">{build.name}</h1>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2">
+              <h1 className="text-4xl font-bold">{build.name}</h1>
+              
+              {buildsForDropdown.length > 1 && (
+                <BuildVariationsDropdown 
+                  currentBuildId={build.id} 
+                  variations={buildsForDropdown}
+                />
+              )}
+            </div>
             <div className="flex items-center space-x-2 mb-6">
               <span className="text-muted-foreground">{build.class}</span>
               <span className="text-muted-foreground">•</span>
@@ -209,7 +285,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
             )}
 
             {/* Build Metrics */}
-            {build.metrics && <BuildMetrics metrics={build.metrics} />}
+            {build.metrics && <BuildMetrics metrics={build.metrics} isVariationMetrics={isUsingVariationMetrics} />}
           </div>
 
           <div>
@@ -308,7 +384,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
     console.error("Error rendering build page:", error)
     return (
       <main className="container mx-auto px-4 py-8">
-        <Link href="/" className="flex items-center text-primary mb-6 hover:underline">
+        <Link href="/builds" className="flex items-center text-primary mb-6 hover:underline">
           <ArrowLeft className="mr-2 h-4 w-4" />
           Back to all builds
         </Link>

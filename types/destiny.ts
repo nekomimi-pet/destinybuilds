@@ -123,5 +123,19 @@ export interface Build {
   aspects: string[]
   fragments: string[]
   metrics?: BuildMetrics
+  variations?: BuildVariation[]
+}
+
+export interface BuildVariation {
+  id: string
+  name: string
+  description: string
+  subclass?: Subclass  // If different from parent build
+  exotics?: string[]   // If different from parent build
+  aspects?: string[]   // If different from parent build
+  fragments?: string[] // If different from parent build
+  howItWorks?: string[] // Optional specific instructions
+  howItWorks2?: string[] // Optional additional instructions
+  metrics?: BuildMetrics // Optional metrics specific to this variation
 }
 
