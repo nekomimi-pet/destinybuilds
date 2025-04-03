@@ -8,6 +8,12 @@ module.exports = {
     "./src/**/*.{ts,tsx}",
     "*.{js,ts,jsx,tsx,mdx}",
   ],
+  safelist: [
+    "bg-gradient-to-r",
+    "from-destiny-arc",
+    "via-destiny-solar",
+    "to-destiny-void",
+  ],
   theme: {
     container: {
       center: true,

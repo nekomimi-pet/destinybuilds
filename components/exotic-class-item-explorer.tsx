@@ -11,6 +11,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronRight, Info, Star, Zap, Shield, Swords, Sparkles, Flame, Bolt } from "lucide-react"
 import type { PerkTier, GuardianClass, ClassItemData } from "@/types/destiny"
+import { getSubclassColor, getTextColor } from "@/lib/colors"
 
 // Helper function to get tier color
 const getTierColor = (tier: PerkTier) => {
@@ -34,32 +35,19 @@ const getTierBgColor = (tier: PerkTier) => {
   return colors[tier]
 }
 
-// Helper function to get subclass color
-const getSubclassColor = (subclass: string) => {
-  const colors = {
-    Solar: "bg-destiny-solar",
-    Arc: "bg-destiny-arc",
-    Void: "bg-destiny-void",
-    Strand: "bg-destiny-strand",
-    Stasis: "bg-destiny-stasis",
-    Any: "bg-gradient-to-r from-destiny-arc via-destiny-solar to-destiny-void",
-  }
-  return colors[subclass as keyof typeof colors] || "bg-gray-500"
-}
-
 // Helper function to get subclass icon
 const getSubclassIcon = (subclass: string) => {
   switch (subclass) {
     case "Solar":
-      return <Flame className="h-4 w-4 text-destiny-solar" />
+      return <Flame className={`h-4 w-4 ${getTextColor(subclass)}`} />
     case "Arc":
-      return <Bolt className="h-4 w-4 text-destiny-arc" />
+      return <Bolt className={`h-4 w-4 ${getTextColor(subclass)}`} />
     case "Void":
-      return <Sparkles className="h-4 w-4 text-destiny-void" />
+      return <Sparkles className={`h-4 w-4 ${getTextColor(subclass)}`} />
     case "Strand":
-      return <Zap className="h-4 w-4 text-destiny-strand" />
+      return <Zap className={`h-4 w-4 ${getTextColor(subclass)}`} />
     case "Stasis":
-      return <Sparkles className="h-4 w-4 text-destiny-stasis" />
+      return <Sparkles className={`h-4 w-4 ${getTextColor(subclass)}`} />
     default:
       return <Sparkles className="h-4 w-4" />
   }
@@ -285,7 +273,6 @@ export default function ExoticClassItemExplorer({
                 <CardTitle>Perk Combination Details</CardTitle>
                 <Badge className={`${getTierColor(selectedComboData.tier)}`}>Tier {selectedComboData.tier}</Badge>
               </div>
-              <CardDescription>Detailed information about this perk combination</CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
               {/* Perk Details */}
@@ -411,7 +398,7 @@ export default function ExoticClassItemExplorer({
                   {classData.perks
                     .filter((perk) => perk.column === 2)
                     .map((perk) => (
-                      <div key={perk.id} className="p-1">
+                      <div key={perk.id} className="p-1 flex justify-center items-center">
                         <TooltipProvider>
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -441,7 +428,7 @@ export default function ExoticClassItemExplorer({
                     .filter((perk) => perk.column === 1)
                     .map((perk1) => (
                       <React.Fragment key={perk1.id}>
-                        <div className="p-1">
+                        <div className="p-1 flex justify-center items-center">
                           <TooltipProvider>
                             <Tooltip>
                               <TooltipTrigger asChild>
@@ -468,7 +455,6 @@ export default function ExoticClassItemExplorer({
                         {classData.perks
                           .filter((perk) => perk.column === 2)
                           .map((perk2) => {
-                            // Find if this combination exists in our predefined combinations
                             const combo = classData.combinations.find(
                               (c) => c.perk1.id === perk1.id && c.perk2.id === perk2.id,
                             )

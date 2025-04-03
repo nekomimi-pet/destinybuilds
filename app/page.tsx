@@ -5,6 +5,7 @@ import { dummyBuilds } from "@/data/dummy-data"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import CurrentSeason from "@/components/current-season"
+import { getSubclassColor } from "@/lib/colors"
 
 export default async function Home() {
   // Get a featured build and one build per class for quick access
@@ -31,15 +32,6 @@ export default async function Home() {
     Hunter: await getClassIcon("Hunter"),
     Titan: await getClassIcon("Titan"),
     Warlock: await getClassIcon("Warlock"),
-  }
-
-  // Get subclass colors
-  const subclassColors = {
-    Solar: "bg-destiny-solar",
-    Arc: "bg-destiny-arc",
-    Void: "bg-destiny-void",
-    Strand: "bg-destiny-strand",
-    Stasis: "bg-destiny-stasis",
   }
 
   return (
@@ -104,12 +96,12 @@ export default async function Home() {
                     {dummyBuilds.filter((b) => b.class === className).length} builds available
                   </p>
                   <div className="flex gap-2">
-                    {Object.entries(subclassColors)
-                      .filter(([subclass]) => dummyBuilds.some((b) => b.class === className && b.subclass === subclass))
-                      .map(([subclass, color]) => (
+                    {Object.keys(subclassCounts)
+                      .filter((subclass) => dummyBuilds.some((b) => b.class === className && b.subclass === subclass))
+                      .map((subclass) => (
                         <div
                           key={`${className}-${subclass}`}
-                          className={`w-4 h-4 rounded-full ${color}`}
+                          className={`w-4 h-4 rounded-full ${getSubclassColor(subclass)}`}
                           title={`${subclass} ${className}`}
                         />
                       ))}
@@ -144,7 +136,7 @@ export default async function Home() {
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent" />
               <div className="absolute bottom-0 left-0 right-0 p-4">
                 <div
-                  className={`w-6 h-1 mb-2 ${subclassColors[featuredBuild.subclass as keyof typeof subclassColors]}`}
+                  className={`w-6 h-1 mb-2 ${getSubclassColor(featuredBuild.subclass)}`}
                 />
                 <h3 className="text-xl font-bold text-white">{featuredBuild.name}</h3>
                 <p className="text-sm text-gray-300">
@@ -186,7 +178,7 @@ export default async function Home() {
           {Object.entries(subclassCounts).map(([subclass, count]) => (
             <Link key={subclass} href={`/builds?subclass=${subclass.toLowerCase()}`} className="group">
               <Card className="overflow-hidden h-full hover:shadow-md transition-all">
-                <div className={`h-2 ${subclassColors[subclass as keyof typeof subclassColors]}`} />
+                <div className={`h-2 ${getSubclassColor(subclass)}`} />
                 <CardContent className="p-4">
                   <h3 className="font-medium group-hover:text-primary transition-colors">{subclass}</h3>
                   <p className="text-sm text-muted-foreground">{count} builds</p>

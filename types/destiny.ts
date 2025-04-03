@@ -4,7 +4,7 @@ export type ExoticType = "Armor" | "Weapon";
 
 export type PerkTier = "S" | "A" | "B" | "C"
 export type GuardianClass = "Hunter" | "Warlock" | "Titan"
-export type Subclass = "Solar" | "Arc" | "Void" | "Strand" | "Stasis"
+export type Subclass = "Solar" | "Arc" | "Void" | "Strand" | "Stasis" | "Prismatic"
 
 export interface Perk {
   id: string

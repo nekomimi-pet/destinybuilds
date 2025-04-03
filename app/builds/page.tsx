@@ -2,23 +2,10 @@ import Image from "next/image"
 import Link from "next/link"
 import { dummyBuilds } from "@/data/dummy-data"
 import { destinyApi } from "@/lib/destinyApi"
-
+import { getSubclassColor } from "@/lib/colors"
 export const metadata = {
   title: "Destiny Builds - Browse by Class and Subclass",
   description: "Find optimized Destiny 2 builds sorted by class and subclass",
-}
-
-// Helper function to get subclass color
-const getSubclassColor = (subclass: string) => {
-  const colors = {
-    Solar: "bg-destiny-solar",
-    Arc: "bg-destiny-arc",
-    Void: "bg-destiny-void",
-    Strand: "bg-destiny-strand",
-    Stasis: "bg-destiny-stasis",
-    Prismatic: "bg-gradient-to-r from-destiny-arc via-destiny-solar to-destiny-void",
-  }
-  return colors[subclass as keyof typeof colors] || "bg-gray-500"
 }
 
 // Sort order for subclasses
@@ -66,10 +53,9 @@ export default async function BuildsPage() {
   // For each class, sort builds by subclass
   Object.keys(classBuckets).forEach((className) => {
     classBuckets[className as keyof typeof classBuckets].sort((a, b) => {
-      return (
-        (subclassOrder[a.subclass as keyof typeof subclassOrder] || 99) -
-        (subclassOrder[b.subclass as keyof typeof subclassOrder] || 99)
-      )
+      const orderA = subclassOrder[a.subclass as keyof typeof subclassOrder] ?? 99;
+      const orderB = subclassOrder[b.subclass as keyof typeof subclassOrder] ?? 99;
+      return orderA - orderB;
     })
   })
 
@@ -86,10 +72,9 @@ export default async function BuildsPage() {
             {/* Group by subclass */}
             {Array.from(new Set(classBuilds.map((build) => build.subclass)))
               .sort((a, b) => {
-                return (
-                  (subclassOrder[a as keyof typeof subclassOrder] || 99) -
-                  (subclassOrder[b as keyof typeof subclassOrder] || 99)
-                )
+                const orderA = subclassOrder[a as keyof typeof subclassOrder] ?? 99;
+                const orderB = subclassOrder[b as keyof typeof subclassOrder] ?? 99;
+                return orderA - orderB;
               })
               .map((subclass) => (
                 <div key={`${className}-${subclass}`} className="space-y-4">

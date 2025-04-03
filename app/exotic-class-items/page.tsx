@@ -18,11 +18,6 @@ export default function ExoticClassItemsPage() {
 
       <div className="mb-8">
         <h1 className="text-4xl font-bold mb-2">Exotic Class Item Explorer</h1>
-        <p className="text-muted-foreground">
-          Discover the perfect perk combinations for your exotic class items. With 64 possible combinations per class,
-          finding the optimal setup can be overwhelming. Our explorer highlights the best combinations and explains why
-          they work so well together.
-        </p>
       </div>
 
       <ExoticClassItemExplorerContainer />
