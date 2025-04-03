@@ -10,30 +10,9 @@ import { Button } from "@/components/ui/button"
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { ChevronRight, Info, Star, Zap, Shield, Swords, Sparkles, Flame, Bolt } from "lucide-react"
-import type { PerkTier, GuardianClass, ClassItemData } from "@/types/destiny"
-import { getSubclassColor, getTextColor } from "@/lib/colors"
+import type {  GuardianClass, ClassItemData, PerkTier } from "@/types/destiny"
+import { getTextColor, getTierColor, getTierBgColor } from "@/lib/colors"
 
-// Helper function to get tier color
-const getTierColor = (tier: PerkTier) => {
-  const colors = {
-    S: "text-yellow-500 border-yellow-500",
-    A: "text-green-500 border-green-500",
-    B: "text-blue-500 border-blue-500",
-    C: "text-gray-400 border-gray-400",
-  }
-  return colors[tier]
-}
-
-// Helper function to get tier background color
-const getTierBgColor = (tier: PerkTier) => {
-  const colors = {
-    S: "bg-yellow-500/10",
-    A: "bg-green-500/10",
-    B: "bg-blue-500/10",
-    C: "bg-gray-500/10",
-  }
-  return colors[tier]
-}
 
 // Helper function to get subclass icon
 const getSubclassIcon = (subclass: string) => {

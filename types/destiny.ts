@@ -1,10 +1,21 @@
-import { DestinyInventoryItemDefinition, DestinySandboxPerkDefinition } from "bungie-api-ts/destiny2"
+import type { DestinyInventoryItemDefinition, DestinySandboxPerkDefinition } from "bungie-api-ts/destiny2"
 
-export type ExoticType = "Armor" | "Weapon";
+export type ExoticType = "Armor" | "Weapon"
 
 export type PerkTier = "S" | "A" | "B" | "C"
 export type GuardianClass = "Hunter" | "Warlock" | "Titan"
 export type Subclass = "Solar" | "Arc" | "Void" | "Strand" | "Stasis" | "Prismatic"
+export type DPSType = "Sustained" | "Burst" | null
+
+export interface BuildMetrics {
+  versatility: number
+  easeOfUse: number
+  survivability: number
+  dps: number
+  crowdControl: number
+  buffHealingSupport: number
+  contentBestFor: string[]
+}
 
 export interface Perk {
   id: string
@@ -84,7 +95,6 @@ export interface Aspect {
   name: string
   description: string
   imageUrl: string
-  
 }
 
 export interface Fragment {
@@ -111,5 +121,6 @@ export interface Build {
   mode: "PvE" | "PvP"
   aspects: string[]
   fragments: string[]
+  metrics?: BuildMetrics
 }
 

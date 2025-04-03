@@ -16,7 +16,7 @@ enum SubclassColors {
     prismatic = "bg-gradient-to-r from-destiny-arc via-destiny-solar to-destiny-void",
 }
 
-import type { Subclass } from "@/types/destiny"
+import type { Subclass, PerkTier } from "@/types/destiny"
 
 export const subclassColors = {
   Solar: "bg-destiny-solar",
@@ -54,3 +54,24 @@ export const getSubclassGradient = (subclass: Subclass | string) => {
   return `bg-gradient-to-r from-destiny-${subclass.toLowerCase()} to-destiny-${subclass.toLowerCase()}/50`
 }
 
+// Helper function to get tier color
+export const getTierColor = (tier: PerkTier) => {
+  const colors = {
+    S: "text-yellow-500 border-yellow-500",
+    A: "text-green-500 border-green-500",
+    B: "text-blue-500 border-blue-500",
+    C: "text-gray-400 border-gray-400",
+  }
+  return colors[tier]
+}
+
+// Helper function to get tier background color
+export const getTierBgColor = (tier: PerkTier) => {
+  const colors = {
+    S: "bg-yellow-500/10",
+    A: "bg-green-500/10",
+    B: "bg-blue-500/10",
+    C: "bg-gray-500/10",
+  }
+  return colors[tier]
+}

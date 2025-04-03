@@ -1,10 +1,13 @@
+import type React from "react"
 import Image from "next/image"
 import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import InventoryScreen from "@/components/inventory-screen"
+import BuildMetrics from "@/components/build-metrics"
 import { dummyBuilds } from "@/data/dummy-data"
 import { destinyApi } from "@/lib/destinyApi"
 import type { Metadata } from "next"
+import { parseTextWithGameItems } from "@/lib/parseGameItems"
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   try {
@@ -101,6 +104,28 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
       }),
     )
 
+    const aspectsData = await Promise.all(
+      build.aspects.map(async (aspectName) => {
+        const aspectData = await destinyApi.getAspect(aspectName)
+        return {
+          name: aspectName,
+          imageUrl: aspectData ? `https://www.bungie.net${aspectData.displayProperties.icon}` : "/placeholder.svg",
+          description: aspectData?.displayProperties.description || "",
+        }
+      }),
+    )
+
+    const fragmentsData = await Promise.all(
+      build.fragments.map(async (fragmentName) => {
+        const fragmentData = await destinyApi.getFragment(fragmentName)
+        return {
+          name: fragmentName,
+          imageUrl: fragmentData ? `https://www.bungie.net${fragmentData.displayProperties.icon}` : "/placeholder.svg",
+          description: fragmentData?.displayProperties.description || "",
+        }
+      }),
+    )
+
     // Sort mods by armor type
     const sortedModsData = [...modsData].sort((a, b) => {
       const order = { helmet: 0, arms: 1, chest: 2, legs: 3, class: 4 }
@@ -108,6 +133,35 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
       const typeB = b.armorType || ""
       return (order[typeA as keyof typeof order] ?? 999) - (order[typeB as keyof typeof order] ?? 999)
     })
+
+    // Collection of items we've already fetched
+    const existingItems = {
+      exotics: exoticsData,
+      mods: modsData,
+      aspects: aspectsData,
+      fragments: fragmentsData,
+    }
+
+    // Parse the howItWorks paragraphs - the first call resets tracking
+    const parsedHowItWorks = await Promise.all(
+      build.howItWorks.map((paragraph, index) => parseTextWithGameItems(paragraph, existingItems, index === 0)),
+    )
+
+    // Parse howItWorks2 paragraphs - don't reset tracking since we continue from howItWorks
+    const parsedHowItWorks2 = build.howItWorks2
+      ? await Promise.all(build.howItWorks2.map((paragraph) => parseTextWithGameItems(paragraph, existingItems, false)))
+      : []
+
+    // Default metrics if none are provided
+    const defaultMetrics = {
+      killPotential: 5,
+      abilityUptime: 5,
+      survivability: 5,
+      crowdControl: 5,
+      consistency: 5,
+      easeOfUse: 5,
+      dpsType: null,
+    }
 
     return (
       <main className="container mx-auto px-4 py-8">
@@ -135,24 +189,27 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
               <p className="text-lg">{build.description}</p>
               <h2>How This Build Works</h2>
               <div className="space-y-4">
-                {build.howItWorks.map((paragraph, index) => (
-                  <p key={index}>{paragraph}</p>
+                {parsedHowItWorks.map((segments: (string | React.ReactElement)[], index: number) => (
+                  <p key={index}>{segments}</p>
                 ))}
               </div>
             </div>
 
             <InventoryScreen build={build} />
 
-            {build.howItWorks2 && (
+            {build.howItWorks2 && build.howItWorks2.length > 0 && (
               <div className="prose dark:prose-invert max-w-none mt-8">
                 <h2>Additional Build Details</h2>
                 <div className="space-y-4">
-                  {build.howItWorks2.map((paragraph, index) => (
-                    <p key={index}>{paragraph}</p>
+                  {parsedHowItWorks2.map((segments: (string | React.ReactElement)[], index: number) => (
+                    <p key={index}>{segments}</p>
                   ))}
                 </div>
               </div>
             )}
+
+            {/* Build Metrics */}
+            {build.metrics && <BuildMetrics metrics={build.metrics} />}
           </div>
 
           <div>
@@ -176,6 +233,47 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
                   </div>
                 ))}
               </div>
+
+              <h2 className="text-xl font-bold mt-8 mb-4">Key Aspects</h2>
+              <div className="space-y-4">
+                {aspectsData.map((aspect) => (
+                  <div key={aspect.name} className="flex items-start space-x-3">
+                    <div className="relative w-12 h-12 bg-black/20 rounded flex-shrink-0">
+                      <Image
+                        src={aspect.imageUrl || "/placeholder.svg"}
+                        alt={aspect.name}
+                        fill
+                        className="object-contain p-1"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{aspect.name}</h3>
+                      <p className="text-sm text-muted-foreground">{aspect.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <h2 className="text-xl font-bold mt-8 mb-4">Key Fragments</h2>
+              <div className="space-y-4">
+                {fragmentsData.map((fragment) => (
+                  <div key={fragment.name} className="flex items-start space-x-3">
+                    <div className="relative w-12 h-12 bg-black/20 rounded flex-shrink-0">
+                      <Image
+                        src={fragment.imageUrl || "/placeholder.svg"}
+                        alt={fragment.name}
+                        fill
+                        className="object-contain p-1"
+                      />
+                    </div>
+                    <div>
+                      <h3 className="font-medium">{fragment.name}</h3>
+                      <p className="text-sm text-muted-foreground">{fragment.description}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              
 
               <h2 className="text-xl font-bold mt-8 mb-4">Key Mods</h2>
               <div className="space-y-4">

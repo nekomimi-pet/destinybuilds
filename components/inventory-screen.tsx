@@ -103,8 +103,7 @@ export default async function InventoryScreen({ build }: InventoryScreenProps) {
               <div className="flex-1 basis-0 min-w-[200px] max-w-fit">
                 <h4 className="text-sm font-semibold mb-2">Exotics</h4>
                 <div
-                  className="grid auto-cols-[120px] grid-flow-col gap-2"
-                  style={{ gridTemplateRows: "repeat(3, auto)" }}
+                  className="grid auto-cols-[120px] grid-flow-col gap-2 md:grid-flow-row md:grid-rows-[repeat(3,auto)] overflow-x-auto pb-2"
                 >
                   {buildData.exotics.map((exotic) => (
                     <Popover key={exotic.name}>
@@ -149,8 +148,7 @@ export default async function InventoryScreen({ build }: InventoryScreenProps) {
               <div className="flex-1 basis-0 min-w-[200px] max-w-fit">
                 <h4 className="text-sm font-semibold mb-2">Aspects</h4>
                 <div
-                  className="grid auto-cols-[120px] grid-flow-col gap-2"
-                  style={{ gridTemplateRows: "repeat(3, auto)" }}
+                  className="grid auto-cols-[120px] grid-flow-col gap-2 md:grid-flow-row md:grid-rows-[repeat(3,auto)] overflow-x-auto pb-2"
                 >
                   {buildData.aspects.map((aspect) => (
                     <Popover key={aspect.name}>
