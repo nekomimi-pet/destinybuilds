@@ -9,7 +9,7 @@ import { getSubclassColor } from "@/lib/colors"
 
 export default async function Home() {
   // Get a featured build and one build per class for quick access
-  const featuredBuild = dummyBuilds[0]
+  const featuredBuild = dummyBuilds[4]
 
   // Group builds by class
   const buildsByClass = {

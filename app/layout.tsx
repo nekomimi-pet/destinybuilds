@@ -104,9 +104,12 @@ export default async function RootLayout({
             {children}
             <footer className="border-t mt-12">
               <div className="container mx-auto px-4 py-6">
-                <p className="text-center text-muted-foreground">
-                  Destiny Builds © {new Date().getFullYear()} - Not affiliated with Bungie, Inc.
-                </p>
+                <div className="flex items-center justify-between">
+                  <p className="text-muted-foreground">
+                    Destiny Builds © {new Date().getFullYear()} - Not affiliated with Bungie, Inc.
+                  </p>
+                  <a href="/credits" className="text-muted-foreground hover:text-primary transition-colors">Credits</a>
+                </div>
               </div>
             </footer>
           </div>
