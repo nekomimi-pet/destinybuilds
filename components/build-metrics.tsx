@@ -35,6 +35,19 @@ export default function BuildMetrics({ metrics }: BuildMetricsProps) {
     crowdControl: "How effectively this build can control groups of enemies",
     buffHealingSupport: "How well this build supports teammates with buffs, healing, or other utility",
     contentBestFor: "The types of content this build excels in",
+    teamplayOrientation: "How well-suited this build is for solo vs team play",
+  }
+
+  const getTeamplayLabel = (rating: number) => {
+    if (rating <= 3) return "Solo"
+    if (rating <= 7) return "Balanced"
+    return "Teamplay"
+  }
+
+  const getTeamplayColor = (rating: number) => {
+    if (rating <= 3) return "bg-blue-500"
+    if (rating <= 7) return "bg-purple-500"
+    return "bg-green-500"
   }
 
   return (
@@ -180,6 +193,32 @@ export default function BuildMetrics({ metrics }: BuildMetricsProps) {
                 className={`h-full ${getColorForRating(metrics.buffHealingSupport)} rounded-full transition-all`}
                 style={{ width: `${metrics.buffHealingSupport * 10}%` }}
               />
+            </div>
+          </div>
+
+          {/* Teamplay Orientation */}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <span className="text-sm font-medium flex items-center gap-1 cursor-help">Playstyle</span>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{tooltips.teamplayOrientation}</p>
+                </TooltipContent>
+              </Tooltip>
+              <span className="text-sm font-medium">{getTeamplayLabel(metrics.teamplayOrientation)}</span>
+            </div>
+            <div className="h-2 w-full bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                className={`h-full ${getTeamplayColor(metrics.teamplayOrientation)} rounded-full transition-all`}
+                style={{ width: `${metrics.teamplayOrientation * 10}%` }}
+              />
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Solo</span>
+              <span>Balanced</span>
+              <span>Teamplay</span>
             </div>
           </div>
         </TooltipProvider>

@@ -149,7 +149,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
 
     // Parse howItWorks2 paragraphs - don't reset tracking since we continue from howItWorks
     const parsedHowItWorks2 = build.howItWorks2
-      ? await Promise.all(build.howItWorks2.map((paragraph) => parseTextWithGameItems(paragraph, existingItems, false)))
+      ? await Promise.all(build.howItWorks2.map((paragraph, index) => parseTextWithGameItems(paragraph, existingItems, index === 0)))
       : []
 
     // Default metrics if none are provided

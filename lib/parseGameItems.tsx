@@ -13,7 +13,9 @@ export async function parseTextWithGameItems(
   text: string, 
   existingItems: {
     exotics: Array<{name: string, imageUrl: string, description: string}>,
-    mods: Array<{name: string, imageUrl: string, description: string, armorType?: string}>
+    mods: Array<{name: string, imageUrl: string, description: string, armorType?: string}>,
+    aspects?: Array<{name: string, imageUrl: string, description: string}>,
+    fragments?: Array<{name: string, imageUrl: string, description: string}>
   },
   resetTracking: boolean = false
 ) {
@@ -22,10 +24,10 @@ export async function parseTextWithGameItems(
     highlightedItems = new Set<string>();
   }
 
-  // Get aspect and fragment data - these aren't loaded in the page already
+  // Get aspect and fragment data only if not provided in existingItems
   const [aspects, fragments] = await Promise.all([
-    destinyApi.getAllAspects(),
-    destinyApi.getAllFragments()
+    existingItems.aspects?.length ? Promise.resolve([]) : destinyApi.getAllAspects(),
+    existingItems.fragments?.length ? Promise.resolve([]) : destinyApi.getAllFragments()
   ]);
   
   // Build a map of item names to their data for efficient lookup
@@ -58,7 +60,31 @@ export async function parseTextWithGameItems(
     });
   });
   
-  // Add aspects to the map
+  // Add aspects from existingItems if provided
+  if (existingItems.aspects && existingItems.aspects.length) {
+    existingItems.aspects.forEach(aspect => {
+      itemMap.set(aspect.name, {
+        type: 'aspect',
+        name: aspect.name,
+        imageUrl: aspect.imageUrl,
+        description: aspect.description
+      });
+    });
+  }
+  
+  // Add fragments from existingItems if provided
+  if (existingItems.fragments && existingItems.fragments.length) {
+    existingItems.fragments.forEach(fragment => {
+      itemMap.set(fragment.name, {
+        type: 'fragment',
+        name: fragment.name,
+        imageUrl: fragment.imageUrl,
+        description: fragment.description
+      });
+    });
+  }
+  
+  // Add aspects from API result if needed
   aspects.forEach(aspect => {
     itemMap.set(aspect.displayProperties.name, {
       type: 'aspect',
@@ -68,7 +94,7 @@ export async function parseTextWithGameItems(
     });
   });
   
-  // Add fragments to the map
+  // Add fragments from API result if needed
   fragments.forEach(fragment => {
     itemMap.set(fragment.displayProperties.name, {
       type: 'fragment',

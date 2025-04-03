@@ -15,6 +15,7 @@ export interface BuildMetrics {
   crowdControl: number
   buffHealingSupport: number
   contentBestFor: string[]
+  teamplayOrientation: number
 }
 
 export interface Perk {

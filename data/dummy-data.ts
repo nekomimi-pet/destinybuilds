@@ -25,6 +25,7 @@ export const dummyBuilds: Build[] = [
       crowdControl: 9,
       buffHealingSupport: 4,
       contentBestFor: ["Nightfalls", "Raids"],
+      teamplayOrientation: 6,
     },
   },
   {
@@ -51,6 +52,7 @@ export const dummyBuilds: Build[] = [
       crowdControl: 9,
       buffHealingSupport: 3,
       contentBestFor: ["Raids", "Dungeons"],
+      teamplayOrientation: 8,
     },
   },
   {
@@ -77,6 +79,7 @@ export const dummyBuilds: Build[] = [
       crowdControl: 10,
       buffHealingSupport: 2,
       contentBestFor: ["Nightfalls", "Grandmaster Nightfalls"],
+      teamplayOrientation: 4,
     },
   },
   {
@@ -104,6 +107,7 @@ export const dummyBuilds: Build[] = [
       crowdControl: 10,
       buffHealingSupport: 5,
       contentBestFor: ["Raids", "Dungeons", "Nightfalls"],
+      teamplayOrientation: 7,
     },
   },
   {
@@ -119,7 +123,7 @@ export const dummyBuilds: Build[] = [
     ],
     howItWorks2: [
       "Neutral Solar Hunter loop applies. Throwing knife attacks give radiant. Giving allies radiant gives you more energy regen. Scorching gives you melee energy. Ignition kills gives orbs and grenade energy.",
-      "Knock Em' Down gives you your melee back on kills if you choose to run it. All your ability kills wil give you super energy with Hands-On and Ashes to Assets. Thats why its better to prio those over intellect.",
+      "Knock 'Em Down gives you your melee back on kills if you choose to run it. All your ability kills wil give you super energy with Hands-On and Ashes to Assets. Thats why its better to prio those over intellect.",
       "Dont feel afraid to use the super on generic yellow bars as killing gives back a third of your energy, and frequent ability kills will charge your super quickly.",
     ],
     imageUrl: "/placeholder.svg?height=300&width=600",
@@ -137,13 +141,14 @@ export const dummyBuilds: Build[] = [
       "Ember of Blistering",
     ],
     metrics: {
-      versatility: 6,
-      easeOfUse: 7,
+      versatility: 5,
+      easeOfUse: 8,
       survivability: 5,
       dps: 10,
-      crowdControl: 4,
+      crowdControl: 3,
       buffHealingSupport: 3,
       contentBestFor: ["Raids", "Dungeons"],
+      teamplayOrientation: 5,
     },
   },
   {
@@ -174,6 +179,7 @@ export const dummyBuilds: Build[] = [
       crowdControl: 4,
       buffHealingSupport: 9,
       contentBestFor: ["Grandmaster Nightfalls", "Master Raids"],
+      teamplayOrientation: 10,
     },
   },
   {
@@ -202,6 +208,7 @@ export const dummyBuilds: Build[] = [
       crowdControl: 8,
       buffHealingSupport: 4,
       contentBestFor: ["Raids", "Dungeons", "Nightfalls"],
+      teamplayOrientation: 5,
     },
   },
   {
@@ -232,6 +239,7 @@ export const dummyBuilds: Build[] = [
       crowdControl: 7,
       buffHealingSupport: 3,
       contentBestFor: ["Raids", "Dungeons"],
+      teamplayOrientation: 7,
     },
   },
 ]
