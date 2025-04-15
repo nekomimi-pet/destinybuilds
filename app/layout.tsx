@@ -9,6 +9,7 @@ import { ModeToggle } from "@/components/mode-toggle"
 import { LoginButton } from "@/components/auth-buttons"
 import { AuthProvider } from "@/components/auth-provider"
 import { getAuthCookie } from "@/lib/auth"
+import { Toaster } from "sonner"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -139,6 +140,7 @@ export default async function RootLayout({
                 </div>
               </footer>
             </div>
+            <Toaster richColors position="top-right" />
           </ThemeProvider>
         </AuthProvider>
       </body>
