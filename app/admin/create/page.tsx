@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { z } from "zod"
 import Link from "next/link"
-import { ArrowLeft, PlusCircle, X } from "lucide-react"
+import { ArrowLeft, PlusCircle, X, Link2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import {
@@ -39,10 +39,13 @@ import { Slider } from "@/components/ui/slider"
 import { toast } from "sonner"
 import { destinyApi } from "@/lib/destinyApi"
 import pb from "@/lib/pocketbase";
+import { Checkbox } from "@/components/ui/checkbox"
 
 // Define Zod schema for form validation
 const formSchema = z.object({
   name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  slug: z.string().min(2, { message: "Slug must be at least 2 characters." })
+    .regex(/^[a-z0-9-]+$/, { message: "Slug can only contain lowercase letters, numbers, and hyphens." }),
   class: z.enum(["Hunter", "Warlock", "Titan"], { 
     required_error: "Class is required." 
   }),
@@ -81,12 +84,14 @@ export default function CreateBuildPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [aspects, setAspects] = useState<{ name: string; description: string; }[]>([]);
   const [fragments, setFragments] = useState<{ name: string; description: string; }[]>([]);
+  const [autoUpdateSlug, setAutoUpdateSlug] = useState(true);
   
   // Initialize form
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       name: "",
+      slug: "",
       class: undefined,
       subclass: undefined,
       description: "",
@@ -140,6 +145,14 @@ export default function CreateBuildPage() {
     }
   };
   
+  // Function to convert name to slug format
+  const generateSlugFromName = (name: string) => {
+    return name
+      .toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9-]/g, '');
+  };
+  
   // Handle form submission
   const onSubmit = async (data: FormValues) => {
     setIsSubmitting(true);
@@ -152,6 +165,7 @@ export default function CreateBuildPage() {
       
       // Prepare data for PocketBase - convert string fields to JSON arrays
       const pocketbaseData = {
+        id: data.slug,
         name: data.name,
         class: data.class,
         subclass: data.subclass,
@@ -301,13 +315,82 @@ export default function CreateBuildPage() {
                     <FormItem>
                       <FormLabel>Build Name</FormLabel>
                       <FormControl>
-                        <Input placeholder="e.g., Celestial Nighthawk DPS" {...field} />
+                        <Input 
+                          placeholder="e.g., Celestial Nighthawk DPS" 
+                          {...field} 
+                          onChange={(e) => {
+                            field.onChange(e);
+                            
+                            // Auto-update slug if enabled
+                            if (autoUpdateSlug) {
+                              const slug = generateSlugFromName(e.target.value);
+                              form.setValue("slug", slug);
+                            }
+                          }}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
                   )}
                 />
                 
+                <FormField
+                  control={form.control}
+                  name="slug"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Build URL Slug</FormLabel>
+                      <FormControl>
+                        <div className="flex gap-2">
+                          <Input 
+                            placeholder="e.g., celestial-nighthawk-dps" 
+                            {...field} 
+                            onChange={(e) => {
+                              // Convert to lowercase and replace spaces with hyphens
+                              const value = e.target.value
+                                .toLowerCase()
+                                .replace(/\s+/g, '-')
+                                .replace(/[^a-z0-9-]/g, '');
+                              field.onChange(value);
+                              
+                              // Disable auto-update if user manually edits
+                              if (autoUpdateSlug) {
+                                setAutoUpdateSlug(false);
+                              }
+                            }}
+                          />
+                          <Button 
+                            type="button" 
+                            size="icon" 
+                            variant="outline"
+                            title={autoUpdateSlug ? "Auto-update from name enabled" : "Auto-update from name disabled"}
+                            onClick={() => setAutoUpdateSlug(!autoUpdateSlug)}
+                            className={autoUpdateSlug ? "bg-primary/10" : ""}
+                          >
+                            <Link2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </FormControl>
+                      <FormDescription className="flex items-center gap-2 mt-2">
+                        <Checkbox 
+                          id="auto-slug" 
+                          checked={autoUpdateSlug} 
+                          onCheckedChange={(checked) => setAutoUpdateSlug(checked as boolean)} 
+                        />
+                        <label htmlFor="auto-slug" className="text-xs cursor-pointer">
+                          Automatically generate from build name
+                        </label>
+                      </FormDescription>
+                      <FormDescription>
+                        This will be used in the URL (builds/your-slug). Only lowercase letters, numbers, and hyphens.
+                      </FormDescription>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <FormField
                   control={form.control}
                   name="class"

@@ -4,21 +4,38 @@ import Link from "next/link"
 import { ArrowLeft } from "lucide-react"
 import InventoryScreen from "@/components/inventory-screen"
 import BuildMetrics from "@/components/build-metrics"
-import { dummyBuilds } from "@/data/dummy-data"
 import { destinyApi } from "@/lib/destinyApi"
 import type { Metadata } from "next"
 import { parseTextWithGameItems } from "@/lib/parseGameItems"
 import BuildVariationsDropdown from "@/components/build-variations-dropdown"
+import pb from "@/lib/pocketbase"
+import type { PBBuildRecord } from "../page"
+
+// Add type for parsed items
+interface ParsedItem {
+  name: string;
+  imageUrl: string;
+  description: string;
+  armorType?: string;
+}
 
 export async function generateMetadata({ params }: { params: { id: string } }): Promise<Metadata> {
   try {
     const resolvedParams = await params
-    const build = (await dummyBuilds.find((b) => b.id === resolvedParams.id)) || dummyBuilds[0]
+    const build = await pb.collection('builds').getOne(resolvedParams.id, {
+      requestKey: null // Disable request cancellation
+    })
 
     // Get the exotic data to access the screenshot
+    const exotics = Array.isArray(build.exotics) ? build.exotics : JSON.parse(build.exotics)
     const exoticData =
-      (await destinyApi.getExoticArmor(build.exotics[0])) || (await destinyApi.getExoticWeapon(build.exotics[0]))
+      (await destinyApi.getExoticArmor(exotics[0])) || (await destinyApi.getExoticWeapon(exotics[0]))
     const imageUrl = exoticData?.screenshot ? `https://www.bungie.net${exoticData.screenshot}` : build.imageUrl
+
+    const tags = Array.isArray(build.tags) ? build.tags : JSON.parse(build.tags)
+    const keyMods = Array.isArray(build.key_mods) ? build.key_mods : JSON.parse(build.key_mods)
+    const aspects = Array.isArray(build.aspects) ? build.aspects : JSON.parse(build.aspects)
+    const fragments = Array.isArray(build.fragments) ? build.fragments : JSON.parse(build.fragments)
 
     return {
       title: `${build.name} Build - Destiny 2 ${build.subclass} ${build.class} Build Guide`,
@@ -40,11 +57,11 @@ export async function generateMetadata({ params }: { params: { id: string } }): 
         build.class,
         build.subclass,
         build.name,
-        ...build.tags,
-        ...build.exotics,
-        ...build.keyMods,
-        ...build.aspects,
-        ...build.fragments,
+        ...tags,
+        ...exotics,
+        ...keyMods,
+        ...aspects,
+        ...fragments,
       ].join(", "),
     }
   } catch (error) {
@@ -61,75 +78,75 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
     const resolvedParams = await params
     
     // Try to find the build directly first
-    let build = await dummyBuilds.find((b) => b.id === resolvedParams.id)
+    let build = await pb.collection('builds').getOne<PBBuildRecord>(resolvedParams.id, {
+      requestKey: null // Disable request cancellation
+    })
+    let parentBuild: PBBuildRecord | null = null
     
-    // Look for a parent build if this is a variation
-    const parentBuild = dummyBuilds.find(b => 
-      b.variations?.some(v => v.id === resolvedParams.id)
-    )
-
-    // Flag to track if the current build is using variation-specific metrics
-    let isUsingVariationMetrics = false
-    
-    // If it's a variation, merge parent build with variation data
-    if (parentBuild) {
-      const variation = parentBuild.variations?.find(v => v.id === resolvedParams.id)
-      if (variation) {
-        // Set the flag if this variation has custom metrics
-        isUsingVariationMetrics = !!variation.metrics
-        
-        build = {
-          ...parentBuild,
-          id: variation.id,
-          name: variation.name,
-          description: variation.description,
-          // Override subclass if specified in variation
-          ...(variation.subclass && { subclass: variation.subclass }),
-          // Override aspects if specified in variation
-          ...(variation.aspects && { aspects: variation.aspects }),
-          // Override fragments if specified in variation
-          ...(variation.fragments && { fragments: variation.fragments }),
-          // Override exotics if specified in variation
-          ...(variation.exotics && { exotics: variation.exotics }),
-          // Override howItWorks if specified in variation
-          ...(variation.howItWorks && { howItWorks: variation.howItWorks }),
-          // Override howItWorks2 if specified in variation
-          ...(variation.howItWorks2 && { howItWorks2: variation.howItWorks2 }),
-          // Override metrics if specified in variation
-          ...(variation.metrics && { metrics: variation.metrics }),
-        }
+    // If this is a variation, fetch the parent build
+    if (build.parent_build_id) {
+      parentBuild = await pb.collection('builds').getOne<PBBuildRecord>(build.parent_build_id, {
+        requestKey: null // Disable request cancellation
+      })
+      
+      // Merge parent build data with variation data
+      build = {
+        ...parentBuild,
+        id: build.id,
+        name: build.name,
+        description: build.description,
+        subclass: build.subclass,
+        aspects: build.aspects,
+        fragments: build.fragments,
+        exotics: build.exotics,
+        how_it_works: build.how_it_works,
+        how_it_works2: build.how_it_works2,
+        metrics: build.metrics,
+        created: build.created,
+        updated: build.updated,
       }
     }
-    
-    // Fallback to the first build if nothing was found
-    if (!build) {
-      build = dummyBuilds[0]
-    }
+
+    // Get all variations if this is a parent build
+    const variations = parentBuild ? [] : await pb.collection('builds').getFullList<PBBuildRecord>({
+      filter: `parent_build_id = "${build.id}"`,
+      requestKey: null // Disable request cancellation
+    })
 
     // Determine which builds to show in the variations dropdown
     const buildsForDropdown = parentBuild 
       ? [
           { id: parentBuild.id, name: parentBuild.name, subclass: parentBuild.subclass },
-          ...(parentBuild.variations?.map(v => ({
-            id: v.id,
-            name: v.name,
-            subclass: v.subclass || parentBuild.subclass,
-            hasCustomMetrics: !!v.metrics
-          })) || [])
+          { 
+            id: build.id, 
+            name: build.name, 
+            subclass: build.subclass,
+            hasCustomMetrics: !!build.metrics
+          }
         ]
       : [
           { id: build.id, name: build.name, subclass: build.subclass },
-          ...(build.variations?.map(v => ({
+          ...variations.map(v => ({
             id: v.id,
             name: v.name,
-            subclass: v.subclass || build.subclass,
+            subclass: v.subclass,
             hasCustomMetrics: !!v.metrics
-          })) || [])
+          }))
         ]
+
+    // Parse JSON fields
+    const exotics = Array.isArray(build.exotics) ? build.exotics : JSON.parse(build.exotics)
+    const keyMods = Array.isArray(build.key_mods) ? build.key_mods : JSON.parse(build.key_mods)
+    const aspects = Array.isArray(build.aspects) ? build.aspects : JSON.parse(build.aspects)
+    const fragments = Array.isArray(build.fragments) ? build.fragments : JSON.parse(build.fragments)
+    const howItWorks = Array.isArray(build.how_it_works) ? build.how_it_works : JSON.parse(build.how_it_works)
+    const howItWorks2 = build.how_it_works2 ? (Array.isArray(build.how_it_works2) ? build.how_it_works2 : JSON.parse(build.how_it_works2)) : undefined
+    const metrics = build.metrics ? (typeof build.metrics === 'object' ? build.metrics : JSON.parse(build.metrics)) : undefined
+    const tags = Array.isArray(build.tags) ? build.tags : JSON.parse(build.tags)
 
     // Fetch exotic and mod data
     const exoticsData = await Promise.all(
-      build.exotics.map(async (exoticName) => {
+      exotics.map(async (exoticName: string): Promise<ParsedItem> => {
         try {
           const exoticData =
             (await destinyApi.getExoticArmor(exoticName)) || (await destinyApi.getExoticWeapon(exoticName))
@@ -150,7 +167,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
     )
 
     const modsData = await Promise.all(
-      build.keyMods.map(async (modName) => {
+      keyMods.map(async (modName: string): Promise<ParsedItem> => {
         try {
           const modData = await destinyApi.getMod(modName)
           return {
@@ -172,7 +189,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
     )
 
     const aspectsData = await Promise.all(
-      build.aspects.map(async (aspectName) => {
+      aspects.map(async (aspectName: string): Promise<ParsedItem> => {
         const aspectData = await destinyApi.getAspect(aspectName)
         return {
           name: aspectName,
@@ -183,7 +200,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
     )
 
     const fragmentsData = await Promise.all(
-      build.fragments.map(async (fragmentName) => {
+      fragments.map(async (fragmentName: string): Promise<ParsedItem> => {
         const fragmentData = await destinyApi.getFragment(fragmentName)
         return {
           name: fragmentName,
@@ -209,25 +226,34 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
       fragments: fragmentsData,
     }
 
-    // Parse the howItWorks paragraphs - the first call resets tracking
+    // Parse the howItWorks paragraphs
     const parsedHowItWorks = await Promise.all(
-      build.howItWorks.map((paragraph, index) => parseTextWithGameItems(paragraph, existingItems, index === 0)),
+      howItWorks.map((paragraph: string, index: number) => parseTextWithGameItems(paragraph, existingItems, index === 0)),
     )
 
-    // Parse howItWorks2 paragraphs - don't reset tracking since we continue from howItWorks
-    const parsedHowItWorks2 = build.howItWorks2
-      ? await Promise.all(build.howItWorks2.map((paragraph, index) => parseTextWithGameItems(paragraph, existingItems, index === 0)))
+    // Parse howItWorks2 paragraphs
+    const parsedHowItWorks2 = howItWorks2
+      ? await Promise.all(howItWorks2.map((paragraph: string, index: number) => parseTextWithGameItems(paragraph, existingItems, index === 0)))
       : []
 
-    // Default metrics if none are provided
-    const defaultMetrics = {
-      killPotential: 5,
-      abilityUptime: 5,
-      survivability: 5,
-      crowdControl: 5,
-      consistency: 5,
-      easeOfUse: 5,
-      dpsType: null,
+    // Convert PocketBase record to UI build format for the InventoryScreen component
+    const uiBuild = {
+      id: build.id,
+      name: build.name,
+      class: build.class,
+      subclass: build.subclass,
+      description: build.description,
+      imageUrl: build.imageUrl || "/placeholder.svg", // Provide default value
+      mode: build.mode,
+      tags,
+      exotics,
+      keyMods,
+      targetStats: Array.isArray(build.target_stats) ? build.target_stats : JSON.parse(build.target_stats),
+      aspects,
+      fragments,
+      howItWorks,
+      howItWorks2,
+      metrics,
     }
 
     return (
@@ -253,7 +279,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
               <span className="text-muted-foreground">{build.class}</span>
               <span className="text-muted-foreground">•</span>
               <div className="flex items-center space-x-2">
-                {build.tags.map((tag) => (
+                {tags.map((tag: string) => (
                   <span key={tag} className="text-xs bg-primary/20 text-primary px-2 py-1 rounded-full">
                     {tag}
                   </span>
@@ -271,9 +297,9 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
               </div>
             </div>
 
-            <InventoryScreen build={build} />
+            <InventoryScreen build={uiBuild} />
 
-            {build.howItWorks2 && build.howItWorks2.length > 0 && (
+            {build.how_it_works2 && build.how_it_works2.length > 0 && (
               <div className="prose dark:prose-invert max-w-none mt-8">
                 <h2>Additional Build Details</h2>
                 <div className="space-y-4">
@@ -285,7 +311,7 @@ export default async function BuildPage({ params }: { params: { id: string } }) 
             )}
 
             {/* Build Metrics */}
-            {build.metrics && <BuildMetrics metrics={build.metrics} isVariationMetrics={isUsingVariationMetrics} />}
+            {metrics && <BuildMetrics metrics={metrics} />}
           </div>
 
           <div>

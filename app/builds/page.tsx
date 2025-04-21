@@ -1,9 +1,31 @@
 import Image from "next/image"
 import Link from "next/link"
-import { dummyBuilds } from "@/data/dummy-data"
 import { destinyApi } from "@/lib/destinyApi"
 import { getSubclassColor } from "@/lib/colors"
 import type { Build, BuildVariation, GuardianClass, Subclass, BuildMetrics } from "@/types/destiny"
+import pb from "@/lib/pocketbase"
+
+export interface PBBuildRecord {
+  id: string;
+  created: string;
+  updated: string;
+  name: string;
+  class: GuardianClass;
+  subclass: Subclass;
+  description: string;
+  imageUrl?: string;
+  mode: "PvE" | "PvP";
+  tags: string[] | string;
+  exotics: string[] | string;
+  key_mods: string[] | string;
+  target_stats: string[] | string;
+  aspects: string[] | string;
+  fragments: string[] | string;
+  how_it_works: string[] | string;
+  how_it_works2?: string[] | string;
+  metrics?: BuildMetrics | string;
+  parent_build_id?: string;
+}
 
 export const metadata = {
   title: "Destiny Builds - Browse by Class and Subclass",
@@ -44,80 +66,96 @@ interface UiBuild {
 }
 
 export default async function BuildsPage() {
-  // Fetch and process builds
+  // Fetch builds from PocketBase
+  const records = await pb.collection('builds').getFullList<PBBuildRecord>({
+    sort: 'created',
+  })
+
+  // Process builds from PocketBase records
   const baseBuilds = await Promise.all(
-    dummyBuilds.map(async (build): Promise<UiBuild> => ({
-      ...build,
-      exotics: await Promise.all(
-        build.exotics.map(async (exoticName) => {
-          const exoticData =
-            (await destinyApi.getExoticArmor(exoticName)) || (await destinyApi.getExoticWeapon(exoticName))
-          return {
-            name: exoticName,
-            imageUrl: exoticData ? `https://www.bungie.net${exoticData.displayProperties.icon}` : "/placeholder.svg",
-          }
-        }),
-      ),
-    })),
+    records
+      .filter(record => !record.parent_build_id) // Filter out variations initially
+      .map(async (record): Promise<UiBuild> => ({
+        id: record.id,
+        name: record.name,
+        class: record.class,
+        subclass: record.subclass,
+        description: record.description,
+        imageUrl: record.imageUrl || "/placeholder.svg",
+        mode: record.mode,
+        tags: Array.isArray(record.tags) ? record.tags : JSON.parse(record.tags),
+        exotics: await Promise.all(
+          (Array.isArray(record.exotics) ? record.exotics : JSON.parse(record.exotics)).map(async (exoticName: string) => {
+            const exoticData =
+              (await destinyApi.getExoticArmor(exoticName)) || (await destinyApi.getExoticWeapon(exoticName))
+            return {
+              name: exoticName,
+              imageUrl: exoticData ? `https://www.bungie.net${exoticData.displayProperties.icon}` : "/placeholder.svg",
+            }
+          }),
+        ),
+        keyMods: Array.isArray(record.key_mods) ? record.key_mods : JSON.parse(record.key_mods),
+        targetStats: Array.isArray(record.target_stats) ? record.target_stats : JSON.parse(record.target_stats),
+        aspects: Array.isArray(record.aspects) ? record.aspects : JSON.parse(record.aspects),
+        fragments: Array.isArray(record.fragments) ? record.fragments : JSON.parse(record.fragments),
+        howItWorks: Array.isArray(record.how_it_works) ? record.how_it_works : JSON.parse(record.how_it_works),
+        howItWorks2: record.how_it_works2 ? (Array.isArray(record.how_it_works2) ? record.how_it_works2 : JSON.parse(record.how_it_works2)) : undefined,
+        metrics: record.metrics ? (typeof record.metrics === 'object' ? record.metrics : JSON.parse(record.metrics)) : undefined,
+      }))
   )
-  
-  // Process variations with different subclasses as separate builds
-  const variationBuilds = (await Promise.all(
-    baseBuilds.flatMap(async (build) => {
-      if (!build.variations) return []
-      
-      // Only include variations with different subclasses
-      const subclassVariations = build.variations.filter(variation => 
-        variation.subclass && variation.subclass !== build.subclass
-      )
-      
-      if (subclassVariations.length === 0) return []
-      
-      return Promise.all(
-        subclassVariations.map(async (variation): Promise<UiBuild> => {
-          // For variations we need to merge with the parent build
-          const exoticNames = variation.exotics || build.exotics.map(e => e.name)
-          
-          // Fetch exotic data for the variation
-          const exoticsData = await Promise.all(
-            exoticNames.map(async (exoticName) => {
-              try {
-                const exoticData =
-                  (await destinyApi.getExoticArmor(exoticName)) || (await destinyApi.getExoticWeapon(exoticName))
-                return {
-                  name: exoticName,
-                  imageUrl: exoticData ? `https://www.bungie.net${exoticData.displayProperties.icon}` : "/placeholder.svg",
-                }
-              } catch {
-                return {
-                  name: exoticName,
-                  imageUrl: "/placeholder.svg",
-                }
+
+  // Process variations
+  const variationBuilds = await Promise.all(
+    records
+      .filter(record => record.parent_build_id) // Get only variations
+      .map(async (record): Promise<UiBuild | null> => {
+        const parentBuild = baseBuilds.find(build => build.id === record.parent_build_id)
+        if (!parentBuild) return null
+
+        const exoticNames = Array.isArray(record.exotics) ? record.exotics : JSON.parse(record.exotics) as string[]
+        const exoticsData = await Promise.all(
+          exoticNames.map(async (exoticName: string) => {
+            try {
+              const exoticData =
+                (await destinyApi.getExoticArmor(exoticName)) || (await destinyApi.getExoticWeapon(exoticName))
+              return {
+                name: exoticName,
+                imageUrl: exoticData ? `https://www.bungie.net${exoticData.displayProperties.icon}` : "/placeholder.svg",
               }
-            })
-          )
-          
-          return {
-            ...build,
-            id: variation.id,
-            name: variation.name || build.name,
-            description: variation.description || build.description,
-            subclass: variation.subclass!,
-            aspects: variation.aspects || build.aspects,
-            fragments: variation.fragments || build.fragments,
-            exotics: exoticsData,
-            isVariation: true,
-            parentBuildId: build.id,
-            // Use variation metrics if available, otherwise use parent metrics
-            metrics: variation.metrics || build.metrics
-          }
-        })
-      )
-    })
-  )).flat()
-  
-  // Combine base builds with variation builds
-  const builds: UiBuild[] = [...baseBuilds, ...variationBuilds]
+            } catch {
+              return {
+                name: exoticName,
+                imageUrl: "/placeholder.svg",
+              }
+            }
+          })
+        )
+
+        return {
+          id: record.id,
+          name: record.name,
+          class: record.class,
+          subclass: record.subclass,
+          description: record.description,
+          imageUrl: record.imageUrl || parentBuild.imageUrl,
+          mode: record.mode,
+          tags: Array.isArray(record.tags) ? record.tags : JSON.parse(record.tags),
+          exotics: exoticsData,
+          keyMods: Array.isArray(record.key_mods) ? record.key_mods : JSON.parse(record.key_mods),
+          targetStats: Array.isArray(record.target_stats) ? record.target_stats : JSON.parse(record.target_stats),
+          aspects: Array.isArray(record.aspects) ? record.aspects : JSON.parse(record.aspects),
+          fragments: Array.isArray(record.fragments) ? record.fragments : JSON.parse(record.fragments),
+          howItWorks: Array.isArray(record.how_it_works) ? record.how_it_works : JSON.parse(record.how_it_works),
+          howItWorks2: record.how_it_works2 ? (Array.isArray(record.how_it_works2) ? record.how_it_works2 : JSON.parse(record.how_it_works2)) : undefined,
+          metrics: record.metrics ? (typeof record.metrics === 'object' ? record.metrics : JSON.parse(record.metrics)) : undefined,
+          isVariation: true,
+          parentBuildId: record.parent_build_id,
+        }
+      })
+  )
+
+  // Filter out null variations and combine builds
+  const builds: UiBuild[] = [...baseBuilds, ...(variationBuilds.filter((build): build is UiBuild => build !== null))]
 
   // Group builds by class
   const classBuckets: Record<GuardianClass, UiBuild[]> = {

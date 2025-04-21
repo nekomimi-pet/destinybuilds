@@ -60,20 +60,37 @@ class DestinyAPI {
 
   private async $http(config: HttpClientConfig) {
     try {
-      const response = await fetch(config.url, {
-        headers: {
-          "X-API-Key": this.apiKey,
-        },
-      })
+      // For browser environments, use server API routes to avoid CORS
+      if (typeof window !== 'undefined') {
+        // Convert Bungie API URL to our own API route
+        const url = new URL(config.url);
+        const apiPath = url.pathname + url.search;
+        const proxyUrl = `/api/bungie-proxy?path=${encodeURIComponent(apiPath)}`;
+        
+        const response = await fetch(proxyUrl);
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+        
+        return response.json();
+      } else {
+        // Server-side code can call the API directly
+        const response = await fetch(config.url, {
+          headers: {
+            "X-API-Key": this.apiKey,
+          },
+        });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`)
+        if (!response.ok) {
+          throw new Error(`HTTP error! Status: ${response.status}`);
+        }
+
+        return response.json();
       }
-
-      return response.json()
     } catch (error) {
-      console.error("API request failed:", error)
-      throw error
+      console.error("API request failed:", error);
+      throw error;
     }
   }
 
@@ -92,11 +109,24 @@ class DestinyAPI {
       console.log("Main manifest tables fetched successfully")
 
       console.log("Fetching Exotic Class Item Manifest from deepsight.gg...");
-      const classItemResponse = await fetch("https://deepsight.gg/manifest/DeepsightSocketExtendedDefinition.json");
-      if (!classItemResponse.ok) {
-        throw new Error(`Failed to fetch class item manifest: ${classItemResponse.status} ${classItemResponse.statusText}`);
+      let classItemManifest;
+      
+      // For browser environments, use our proxy
+      if (typeof window !== 'undefined') {
+        const proxyUrl = `/api/bungie-proxy?path=${encodeURIComponent('/deepsight-proxy?url=https://deepsight.gg/manifest/DeepsightSocketExtendedDefinition.json')}`;
+        const classItemResponse = await fetch(proxyUrl);
+        if (!classItemResponse.ok) {
+          throw new Error(`Failed to fetch class item manifest: ${classItemResponse.status} ${classItemResponse.statusText}`);
+        }
+        classItemManifest = await classItemResponse.json();
+      } else {
+        // Server-side can fetch directly
+        const classItemResponse = await fetch("https://deepsight.gg/manifest/DeepsightSocketExtendedDefinition.json");
+        if (!classItemResponse.ok) {
+          throw new Error(`Failed to fetch class item manifest: ${classItemResponse.status} ${classItemResponse.statusText}`);
+        }
+        classItemManifest = await classItemResponse.json();
       }
-      const classItemManifest = await classItemResponse.json();
       
       // Validate that it's an object
       if (typeof classItemManifest !== 'object' || classItemManifest === null) {
@@ -374,7 +404,7 @@ class DestinyAPI {
           return item
         }
 
-        // For weapons, use socket 0 (unchanged)
+        // For weapons, use socket 0
         const perkHash = item.sockets.socketEntries[0]?.singleInitialItemHash
         if (perkHash) {
           const perkItem = itemMap.get(perkHash)

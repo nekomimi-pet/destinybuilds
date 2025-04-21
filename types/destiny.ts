@@ -7,6 +7,29 @@ export type GuardianClass = "Hunter" | "Warlock" | "Titan"
 export type Subclass = "Solar" | "Arc" | "Void" | "Strand" | "Stasis" | "Prismatic"
 export type DPSType = "Sustained" | "Burst" | null
 
+// PocketBase build record interface
+export interface PBBuildRecord {
+  id: string;
+  created: string;
+  updated: string;
+  name: string;
+  class: GuardianClass;
+  subclass: Subclass;
+  description: string;
+  imageUrl?: string;
+  mode: "PvE" | "PvP";
+  tags: string[];
+  exotics: string[];
+  key_mods: string[];
+  target_stats: string[];
+  aspects: string[];
+  fragments: string[];
+  how_it_works: string[]; 
+  how_it_works2?: string[]; 
+  metrics?: BuildMetrics; 
+  parent_build_id?: string; // Relation to parent build (optional)
+}
+
 export interface BuildMetrics {
   versatility: number
   easeOfUse: number
